@@ -1,0 +1,37 @@
+environments:
+  local:
+    base_url: "http://localhost:3030"
+    timeout: 30000
+    
+  dev:
+    base_url: "https://dev-api.finanzas.com"
+    timeout: 30000
+    
+  staging:
+    base_url: "https://staging-api.finanzas.com"
+    timeout: 30000
+    
+  prod:
+    base_url: "https://api.finanzas.com"
+    timeout: 30000
+
+api:
+  endpoints:
+    gastos: "/api/gastos"
+    ingresos: "/api/ingresos"
+    categorias: "/api/categorias"
+    usuarios: "/api/usuarios"
+    reportes: "/api/reportes"
+    presupuestos: "/api/presupuestos"
+
+test_data:
+  default_user:
+    email: "test@example.com"
+    password: "Test123!"
+    
+database:
+  cleanup_after_tests: true
+  
+reporting:
+  allure_results_path: "target/allure-results"
+  screenshots_on_failure: true
