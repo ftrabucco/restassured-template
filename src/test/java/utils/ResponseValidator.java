@@ -21,6 +21,10 @@ public class ResponseValidator {
     public static void validateStatusCode(Response response, int expectedStatusCode) {
         int actualStatusCode = response.getStatusCode();
         logger.info("Validating status code. Expected: {}, Actual: {}", expectedStatusCode, actualStatusCode);
+        
+        // Attach response details to Allure
+        AllureLogger.attachResponse(response);
+        
         assertThat("Status code validation failed", actualStatusCode, equalTo(expectedStatusCode));
     }
 
@@ -42,6 +46,21 @@ public class ResponseValidator {
         Object actualValue = response.jsonPath().get(fieldPath);
         logger.info("Validating field '{}'. Expected: {}, Actual: {}", fieldPath, expectedValue, actualValue);
         assertThat("Field value validation failed for: " + fieldPath, actualValue, equalTo(expectedValue));
+    }
+
+    @Step("Validate numeric field {fieldPath} equals {expectedValue}")
+    public static void validateNumericFieldValue(Response response, String fieldPath, Number expectedValue) {
+        Number actualValue = response.jsonPath().get(fieldPath);
+        logger.info("Validating numeric field '{}'. Expected: {}, Actual: {}", fieldPath, expectedValue, actualValue);
+        assertThat("Numeric field validation failed for: " + fieldPath, 
+                  actualValue.longValue(), equalTo(expectedValue.longValue()));
+    }
+
+    @Step("Validate string field {fieldPath} equals {expectedValue}")
+    public static void validateStringFieldValue(Response response, String fieldPath, String expectedValue) {
+        String actualValue = response.jsonPath().getString(fieldPath);
+        logger.info("Validating string field '{}'. Expected: {}, Actual: {}", fieldPath, expectedValue, actualValue);
+        assertThat("String field validation failed for: " + fieldPath, actualValue, equalTo(expectedValue));
     }
 
     @Step("Validate field {fieldPath} contains {expectedValue}")
@@ -91,9 +110,19 @@ public class ResponseValidator {
 
     @Step("Validate numeric field {fieldPath} is positive")
     public static void validatePositiveNumber(Response response, String fieldPath) {
-        Number actualValue = response.jsonPath().get(fieldPath);
-        logger.info("Validating field '{}' is positive. Value: {}", fieldPath, actualValue);
-        assertThat("Field should be positive: " + fieldPath, actualValue.doubleValue(), greaterThan(0.0));
+        Object fieldValue = response.jsonPath().get(fieldPath);
+        logger.info("Validating field '{}' is positive. Value: {}", fieldPath, fieldValue);
+        
+        double numericValue;
+        if (fieldValue instanceof Number) {
+            numericValue = ((Number) fieldValue).doubleValue();
+        } else if (fieldValue instanceof String) {
+            numericValue = Double.parseDouble((String) fieldValue);
+        } else {
+            throw new AssertionError("Field '" + fieldPath + "' is not a numeric value: " + fieldValue);
+        }
+        
+        assertThat("Field should be positive: " + fieldPath, numericValue, greaterThan(0.0));
     }
 
     @Step("Validate date field {fieldPath} format")

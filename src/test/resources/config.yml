@@ -19,10 +19,16 @@ api:
   endpoints:
     gastos: "/api/gastos"
     ingresos: "/api/ingresos"
+    compras: "/api/compras"
+    debitos_automaticos: "/api/debitos-automaticos"
+    gastos_unicos: "/api/gastos-unicos"
+    gastos_recurrentes: "/api/gastos-recurrentes"
     categorias: "/api/categorias"
+    tipos_pago: "/api/tipos-pago"
+    tarjetas: "/api/tarjetas"
+    frecuencias: "/api/frecuencias"
+    importancias: "/api/importancias"
     usuarios: "/api/usuarios"
-    reportes: "/api/reportes"
-    presupuestos: "/api/presupuestos"
 
 test_data:
   default_user:

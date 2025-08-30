@@ -36,3 +36,20 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Testing & Reports ###
+.allure/
+allure-results/
+allure-report/
+*.log
+*.tmp
+
+### Environment & Config ###
+.env
+*.properties.local
+config-local.yml
+
+### Temporary Files ###
+*.swp
+*.swo
+*~

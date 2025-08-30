@@ -6,87 +6,75 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Model class for Gasto (Expense) entity
+ * Model class for GastoUnico (One-time Expense) entity
  * Demonstrates Builder pattern implementation
  */
-public class Gasto {
+public class GastoUnico {
     @JsonProperty("id")
     private Long id;
-    
-    @JsonProperty("monto")
-    private BigDecimal monto;
     
     @JsonProperty("descripcion")
     private String descripcion;
     
+    @JsonProperty("monto")
+    private BigDecimal monto;
+    
     @JsonProperty("fecha")
     private LocalDate fecha;
     
-    @JsonProperty("categoria_id")
-    private Long categoriaId;
+    @JsonProperty("categoria_gasto_id")
+    private Long categoriaGastoId;
+    
+    @JsonProperty("importancia_gasto_id")
+    private Long importanciaGastoId;
     
     @JsonProperty("tipo_pago_id")
     private Long tipoPagoId;
-    
-    @JsonProperty("tarjeta_id")
-    private Long tarjetaId;
-    
-    @JsonProperty("notas")
-    private String notas;
 
     // Default constructor
-    public Gasto() {}
+    public GastoUnico() {}
 
     // Constructor with Builder
-    private Gasto(Builder builder) {
+    private GastoUnico(Builder builder) {
         this.id = builder.id;
-        this.monto = builder.monto;
         this.descripcion = builder.descripcion;
+        this.monto = builder.monto;
         this.fecha = builder.fecha;
-        this.categoriaId = builder.categoriaId;
+        this.categoriaGastoId = builder.categoriaGastoId;
+        this.importanciaGastoId = builder.importanciaGastoId;
         this.tipoPagoId = builder.tipoPagoId;
-        this.tarjetaId = builder.tarjetaId;
-        this.notas = builder.notas;
     }
 
     // Getters
     public Long getId() { return id; }
-    public BigDecimal getMonto() { return monto; }
     public String getDescripcion() { return descripcion; }
+    public BigDecimal getMonto() { return monto; }
     public LocalDate getFecha() { return fecha; }
-    public Long getCategoriaId() { return categoriaId; }
+    public Long getCategoriaGastoId() { return categoriaGastoId; }
+    public Long getImportanciaGastoId() { return importanciaGastoId; }
     public Long getTipoPagoId() { return tipoPagoId; }
-    public Long getTarjetaId() { return tarjetaId; }
-    public String getNotas() { return notas; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
-    public void setMonto(BigDecimal monto) { this.monto = monto; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setMonto(BigDecimal monto) { this.monto = monto; }
     public void setFecha(LocalDate fecha) { this.fecha = fecha; }
-    public void setCategoriaId(Long categoriaId) { this.categoriaId = categoriaId; }
+    public void setCategoriaGastoId(Long categoriaGastoId) { this.categoriaGastoId = categoriaGastoId; }
+    public void setImportanciaGastoId(Long importanciaGastoId) { this.importanciaGastoId = importanciaGastoId; }
     public void setTipoPagoId(Long tipoPagoId) { this.tipoPagoId = tipoPagoId; }
-    public void setTarjetaId(Long tarjetaId) { this.tarjetaId = tarjetaId; }
-    public void setNotas(String notas) { this.notas = notas; }
 
     // Builder pattern implementation
     public static class Builder {
         private Long id;
-        private BigDecimal monto;
         private String descripcion;
+        private BigDecimal monto;
         private LocalDate fecha;
-        private Long categoriaId;
+        private Long categoriaGastoId;
+        private Long importanciaGastoId;
         private Long tipoPagoId;
-        private Long tarjetaId;
-        private String notas;
 
         public Builder id(Long id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder monto(BigDecimal monto) {
-            this.monto = monto;
             return this;
         }
 
@@ -95,13 +83,23 @@ public class Gasto {
             return this;
         }
 
+        public Builder monto(BigDecimal monto) {
+            this.monto = monto;
+            return this;
+        }
+
         public Builder fecha(LocalDate fecha) {
             this.fecha = fecha;
             return this;
         }
 
-        public Builder categoriaId(Long categoriaId) {
-            this.categoriaId = categoriaId;
+        public Builder categoriaGastoId(Long categoriaGastoId) {
+            this.categoriaGastoId = categoriaGastoId;
+            return this;
+        }
+
+        public Builder importanciaGastoId(Long importanciaGastoId) {
+            this.importanciaGastoId = importanciaGastoId;
             return this;
         }
 
@@ -110,32 +108,21 @@ public class Gasto {
             return this;
         }
 
-        public Builder tarjetaId(Long tarjetaId) {
-            this.tarjetaId = tarjetaId;
-            return this;
-        }
-
-        public Builder notas(String notas) {
-            this.notas = notas;
-            return this;
-        }
-
-        public Gasto build() {
-            return new Gasto(this);
+        public GastoUnico build() {
+            return new GastoUnico(this);
         }
     }
 
     @Override
     public String toString() {
-        return "Gasto{" +
+        return "GastoUnico{" +
                 "id=" + id +
-                ", monto=" + monto +
                 ", descripcion='" + descripcion + '\'' +
+                ", monto=" + monto +
                 ", fecha=" + fecha +
-                ", categoriaId=" + categoriaId +
+                ", categoriaGastoId=" + categoriaGastoId +
+                ", importanciaGastoId=" + importanciaGastoId +
                 ", tipoPagoId=" + tipoPagoId +
-                ", tarjetaId=" + tarjetaId +
-                ", notas='" + notas + '\'' +
                 '}';
     }
 }

@@ -9,6 +9,8 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -33,6 +35,21 @@ public abstract class BaseTest {
         
         // Global RestAssured configuration
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+        
+        // Enable detailed logging for debugging
+        if (logger.isDebugEnabled()) {
+            System.setProperty("org.slf4j.simpleLogger.log.io.restassured", "DEBUG");
+        }
+        
+        // Configure Jackson ObjectMapper for Java 8 time support
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        RestAssured.config = RestAssured.config().objectMapperConfig(
+            RestAssured.config().getObjectMapperConfig().jackson2ObjectMapperFactory(
+                (cls, charset) -> objectMapper
+            )
+        );
     }
 
     @BeforeEach

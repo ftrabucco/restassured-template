@@ -6,13 +6,9 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import io.restassured.response.Response;
-import models.Gasto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import utils.ResponseValidator;
-import utils.TestDataFactory;
-
-import java.math.BigDecimal;
 
 /**
  * Test class for Gastos (Expenses) API endpoints
@@ -42,41 +38,6 @@ public class GastosApiTest extends BaseTest {
         ResponseValidator.validateResponseBodyNotEmpty(response);
     }
 
-    @Test
-    @Story("Create gasto")
-    @DisplayName("Should create a new gasto successfully")
-    @Description("Verify that a new gasto can be created with valid data")
-    void shouldCreateGastoSuccessfully() {
-        // Arrange
-        Gasto newGasto = TestDataFactory.createRandomGasto();
-
-        // Act
-        Response response = gastosClient.createGasto(newGasto);
-
-        // Assert
-        ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateFieldValue(response, "descripcion", newGasto.getDescripcion());
-        ResponseValidator.validateFieldValue(response, "categoria", newGasto.getCategoria());
-    }
-
-    @Test
-    @Story("Create gasto")
-    @DisplayName("Should create gasto with specific amount")
-    @Description("Verify that a gasto can be created with a specific monetary amount")
-    void shouldCreateGastoWithSpecificAmount() {
-        // Arrange
-        BigDecimal testAmount = BigDecimal.valueOf(150.75);
-        Gasto gasto = TestDataFactory.createGastoWithSpecificAmount(testAmount);
-
-        // Act
-        Response response = gastosClient.createGasto(gasto);
-
-        // Assert
-        ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validatePositiveNumber(response, "monto");
-    }
 
     @Test
     @Story("Get gasto by category")
@@ -84,10 +45,10 @@ public class GastosApiTest extends BaseTest {
     @Description("Verify that gastos can be filtered by category")
     void shouldGetGastosByCategory() {
         // Arrange
-        String categoria = "Alimentación";
+        String categoriaId = "1";
 
         // Act
-        Response response = gastosClient.getGastosByCategoria(categoria);
+        Response response = gastosClient.getGastosWithFilters(categoriaId, null, null, null, null, null, null, null, null);
 
         // Assert
         ResponseValidator.validateStatusCode(response, 200);
@@ -111,16 +72,16 @@ public class GastosApiTest extends BaseTest {
     }
 
     @Test
-    @Story("Get gastos by date range")
-    @DisplayName("Should retrieve gastos within date range")
-    @Description("Verify that gastos can be filtered by date range")
-    void shouldGetGastosByDateRange() {
+    @Story("Get gastos summary by date range")
+    @DisplayName("Should retrieve gastos summary within date range")
+    @Description("Verify that gastos summary can be filtered by date range using query parameters")
+    void shouldGetGastosSummaryByDateRange() {
         // Arrange
-        String fechaInicio = "2024-01-01";
-        String fechaFin = "2024-12-31";
+        String fechaDesde = "2024-01-01";
+        String fechaHasta = "2024-01-31";
 
         // Act
-        Response response = gastosClient.getGastosByDateRange(fechaInicio, fechaFin);
+        Response response = gastosClient.getGastosSummary(fechaDesde, fechaHasta);
 
         // Assert
         ResponseValidator.validateStatusCode(response, 200);
