@@ -78,4 +78,11 @@ public class AllureLogger {
             addErrorDetailsAttachment(errorDetails);
         }
     }
+    
+    public static void addJsonAttachment(String name, String jsonContent) {
+        if (jsonContent != null) {
+            Allure.addAttachment(name, "application/json", 
+                new ByteArrayInputStream(jsonContent.getBytes(StandardCharsets.UTF_8)), ".json");
+        }
+    }
 }

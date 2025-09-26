@@ -17,7 +17,7 @@ public class GastosApiClient extends ApiClient {
 
     @Step("Get all gastos")
     public Response getAllGastos() {
-        return get(baseEndpoint + "/all");
+        return get(baseEndpoint);
     }
 
     @Step("Get gasto by ID: {gastoId}")
@@ -48,7 +48,7 @@ public class GastosApiClient extends ApiClient {
         boolean hasParams = false;
         
         if (categoriaId != null) {
-            url.append(hasParams ? "&" : "?").append("categoria_id=").append(categoriaId);
+            url.append(hasParams ? "&" : "?").append("categoria_gasto_id=").append(categoriaId);
             hasParams = true;
         }
         if (fechaDesde != null) {
@@ -106,5 +106,11 @@ public class GastosApiClient extends ApiClient {
     @Step("Generate pending expenses")
     public Response generateGastos() {
         return get(baseEndpoint + "/generate");
+    }
+
+    @Step("Search gastos by tipo_origen and id_origen")
+    public Response getGastosByOrigin(String tipoOrigen, String idOrigen) {
+        String url = baseEndpoint + "?tipo_origen=" + tipoOrigen + "&id_origen=" + idOrigen;
+        return get(url);
     }
 }

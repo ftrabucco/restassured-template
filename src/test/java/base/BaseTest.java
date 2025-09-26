@@ -79,6 +79,13 @@ public abstract class BaseTest {
     protected void customSetup() {
         // Override in subclasses if needed
     }
+    
+    /**
+     * Get the configured request specification for use in clients
+     */
+    protected RequestSpecification getRequestSpec() {
+        return this.requestSpec;
+    }
 
     @Step("Get authentication token")
     protected String getAuthToken() {

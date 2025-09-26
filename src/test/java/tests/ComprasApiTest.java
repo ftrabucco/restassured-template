@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.ComprasApiClient;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -13,13 +13,19 @@ import utils.ResponseValidator;
 import utils.TestDataFactory;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import static base.ApiTestWithCleanup.EntityType;
 
 /**
  * Test class for Compras (Purchases) API endpoints
  * Demonstrates comprehensive testing scenarios for purchase operations
  */
 @Feature("Compras API")
-public class ComprasApiTest extends BaseTest {
+public class ComprasApiTest extends ApiTestWithCleanup {
     private ComprasApiClient comprasClient;
 
     @Override
@@ -53,15 +59,24 @@ public class ComprasApiTest extends BaseTest {
         // Act
         Response response = comprasClient.createCompra(newCompra);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.COMPRA, "data.compra.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateStringFieldValue(response, "descripcion", newCompra.getDescripcion());
-        ResponseValidator.validateNumericFieldValue(response, "categoria_gasto_id", newCompra.getCategoriaGastoId());
-        ResponseValidator.validateNumericFieldValue(response, "importancia_gasto_id", newCompra.getImportanciaGastoId());
-        ResponseValidator.validateNumericFieldValue(response, "tipo_pago_id", newCompra.getTipoPagoId());
-        ResponseValidator.validateNumericFieldValue(response, "tarjeta_id", newCompra.getTarjetaId());
-        ResponseValidator.validateNumericFieldValue(response, "cantidad_cuotas", newCompra.getCantidadCuotas());
+        
+        // Debug: Log response structure
+        System.out.println("=== COMPRAS CREATE RESPONSE ===");
+        System.out.println(response.getBody().asString());
+        System.out.println("==============================");
+        
+        ResponseValidator.validateFieldExists(response, "data.compra.id");
+        ResponseValidator.validateStringFieldValue(response, "data.compra.descripcion", newCompra.getDescripcion());
+        ResponseValidator.validateNumericFieldValue(response, "data.compra.categoria_gasto_id", newCompra.getCategoriaGastoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.compra.importancia_gasto_id", newCompra.getImportanciaGastoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.compra.tipo_pago_id", newCompra.getTipoPagoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.compra.tarjeta_id", newCompra.getTarjetaId());
+        ResponseValidator.validateNumericFieldValue(response, "data.compra.cantidad_cuotas", newCompra.getCantidadCuotas());
     }
 
     @Test
@@ -76,12 +91,15 @@ public class ComprasApiTest extends BaseTest {
         // Act
         Response response = comprasClient.createCompra(compra);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.COMPRA, "data.compra.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validatePositiveNumber(response, "monto_total");
-        ResponseValidator.validateStringFieldValue(response, "descripcion", "Laptop");
-        ResponseValidator.validateNumericFieldValue(response, "cantidad_cuotas", 12);
+        ResponseValidator.validateFieldExists(response, "data.compra.id");
+        ResponseValidator.validatePositiveNumber(response, "data.compra.monto_total");
+        ResponseValidator.validateStringFieldValue(response, "data.compra.descripcion", "Laptop");
+        ResponseValidator.validateNumericFieldValue(response, "data.compra.cantidad_cuotas", 12);
     }
 
     @Test
@@ -92,7 +110,10 @@ public class ComprasApiTest extends BaseTest {
         // Arrange
         Compra newCompra = TestDataFactory.createRandomCompra();
         Response createResponse = comprasClient.createCompra(newCompra);
-        String compraId = createResponse.jsonPath().getString("id");
+        String compraId = createResponse.jsonPath().getString("data.compra.id");
+
+        // Track for cleanup
+        trackCreatedCompra(compraId);
 
         // Act
         Response response = comprasClient.getCompraById(compraId);
@@ -100,8 +121,8 @@ public class ComprasApiTest extends BaseTest {
         // Assert
         ResponseValidator.validateStatusCode(response, 200);
         ResponseValidator.validateContentType(response, "application/json");
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateStringFieldValue(response, "id", compraId);
+        ResponseValidator.validateFieldExists(response, "data.id");
+        ResponseValidator.validateStringFieldValue(response, "data.id", compraId);
     }
 
     @Test
@@ -150,9 +171,24 @@ public class ComprasApiTest extends BaseTest {
         // Act
         Response response = comprasClient.createCompra(compra);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.COMPRA, "data.compra.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateNumericFieldValue(response, "categoria_gasto_id", categoriaGastoId);
+        ResponseValidator.validateFieldExists(response, "data.compra.id");
+        ResponseValidator.validateNumericFieldValue(response, "data.compra.categoria_gasto_id", categoriaGastoId);
+    }
+
+    // Cleanup implementation using Strategy Pattern (SOLID principles)
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+
+        // Only register cleanup strategy for entities this test creates
+        strategies.put(EntityType.COMPRA, compraIds ->
+            performCleanup(compraIds, comprasClient::deleteCompra, "compra"));
+
+        return strategies;
     }
 }

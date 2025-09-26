@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.GastosRecurrentesApiClient;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -13,13 +13,19 @@ import utils.ResponseValidator;
 import utils.TestDataFactory;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import static base.ApiTestWithCleanup.EntityType;
 
 /**
  * Test class for Gastos Recurrentes (Recurring Expenses) API endpoints
  * Demonstrates comprehensive CRUD testing scenarios
  */
 @Feature("Gastos Recurrentes API")
-public class GastosRecurrentesApiTest extends BaseTest {
+public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
     private GastosRecurrentesApiClient gastosRecurrentesClient;
 
     @Override
@@ -55,14 +61,20 @@ public class GastosRecurrentesApiTest extends BaseTest {
 
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateStringFieldValue(response, "descripcion", newGastoRecurrente.getDescripcion());
-        ResponseValidator.validateNumericFieldValue(response, "categoria_gasto_id", newGastoRecurrente.getCategoriaGastoId());
-        ResponseValidator.validateNumericFieldValue(response, "importancia_gasto_id", newGastoRecurrente.getImportanciaGastoId());
-        ResponseValidator.validateNumericFieldValue(response, "tipo_pago_id", newGastoRecurrente.getTipoPagoId());
-        ResponseValidator.validateNumericFieldValue(response, "tarjeta_id", newGastoRecurrente.getTarjetaId());
-        ResponseValidator.validateNumericFieldValue(response, "dia_de_pago", newGastoRecurrente.getDiaDePago());
-        ResponseValidator.validateNumericFieldValue(response, "frecuencia_gasto_id", newGastoRecurrente.getFrecuenciaGastoId());
+        
+        // Debug: Log response structure
+        System.out.println("=== GASTOS RECURRENTES CREATE RESPONSE ===");
+        System.out.println(response.getBody().asString());
+        System.out.println("==========================================");
+        
+        ResponseValidator.validateFieldExists(response, "data.gastoRecurrente.id");
+        ResponseValidator.validateStringFieldValue(response, "data.gastoRecurrente.descripcion", newGastoRecurrente.getDescripcion());
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.categoria_gasto_id", newGastoRecurrente.getCategoriaGastoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.importancia_gasto_id", newGastoRecurrente.getImportanciaGastoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.tipo_pago_id", newGastoRecurrente.getTipoPagoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.tarjeta_id", newGastoRecurrente.getTarjetaId());
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.dia_de_pago", newGastoRecurrente.getDiaDePago());
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.frecuencia_gasto_id", newGastoRecurrente.getFrecuenciaGastoId());
     }
 
     @Test
@@ -79,11 +91,11 @@ public class GastosRecurrentesApiTest extends BaseTest {
 
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validatePositiveNumber(response, "monto");
-        ResponseValidator.validateStringFieldValue(response, "descripcion", "test 2");
-        ResponseValidator.validateNumericFieldValue(response, "dia_de_pago", 15);
-        ResponseValidator.validateNumericFieldValue(response, "frecuencia_gasto_id", 2);
+        ResponseValidator.validateFieldExists(response, "data.gastoRecurrente.id");
+        ResponseValidator.validatePositiveNumber(response, "data.gastoRecurrente.monto");
+        ResponseValidator.validateStringFieldValue(response, "data.gastoRecurrente.descripcion", "test 2");
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.dia_de_pago", 15);
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.frecuencia_gasto_id", 2);
     }
 
     @Test
@@ -94,7 +106,7 @@ public class GastosRecurrentesApiTest extends BaseTest {
         // Arrange
         GastoRecurrente newGastoRecurrente = TestDataFactory.createRandomGastoRecurrente();
         Response createResponse = gastosRecurrentesClient.createGastoRecurrente(newGastoRecurrente);
-        String gastoRecurrenteId = createResponse.jsonPath().getString("id");
+        String gastoRecurrenteId = createResponse.jsonPath().getString("data.gastoRecurrente.id");
 
         // Act
         Response response = gastosRecurrentesClient.getGastoRecurrenteById(gastoRecurrenteId);
@@ -102,8 +114,8 @@ public class GastosRecurrentesApiTest extends BaseTest {
         // Assert
         ResponseValidator.validateStatusCode(response, 200);
         ResponseValidator.validateContentType(response, "application/json");
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateStringFieldValue(response, "id", gastoRecurrenteId);
+        ResponseValidator.validateFieldExists(response, "data.id");
+        ResponseValidator.validateStringFieldValue(response, "data.id", gastoRecurrenteId);
     }
 
     @Test
@@ -114,7 +126,7 @@ public class GastosRecurrentesApiTest extends BaseTest {
         // Arrange
         GastoRecurrente originalGastoRecurrente = TestDataFactory.createRandomGastoRecurrente();
         Response createResponse = gastosRecurrentesClient.createGastoRecurrente(originalGastoRecurrente);
-        String gastoRecurrenteId = createResponse.jsonPath().getString("id");
+        String gastoRecurrenteId = createResponse.jsonPath().getString("data.gastoRecurrente.id");
 
         GastoRecurrente updatedGastoRecurrente = TestDataFactory.createGastoRecurrenteWithSpecificAmount(BigDecimal.valueOf(75.00));
         updatedGastoRecurrente.setDescripcion("Gasto recurrente actualizado");
@@ -125,9 +137,9 @@ public class GastosRecurrentesApiTest extends BaseTest {
 
         // Assert
         ResponseValidator.validateStatusCode(response, 200);
-        ResponseValidator.validateStringFieldValue(response, "descripcion", "Gasto recurrente actualizado");
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateFieldValue(response, "activo", false);
+        ResponseValidator.validateStringFieldValue(response, "data.descripcion", "Gasto recurrente actualizado");
+        ResponseValidator.validateFieldExists(response, "data.id");
+        ResponseValidator.validateFieldValue(response, "data.activo", false);
     }
 
     @Test
@@ -138,7 +150,7 @@ public class GastosRecurrentesApiTest extends BaseTest {
         // Arrange
         GastoRecurrente newGastoRecurrente = TestDataFactory.createRandomGastoRecurrente();
         Response createResponse = gastosRecurrentesClient.createGastoRecurrente(newGastoRecurrente);
-        String gastoRecurrenteId = createResponse.jsonPath().getString("id");
+        String gastoRecurrenteId = createResponse.jsonPath().getString("data.gastoRecurrente.id");
 
         // Act
         Response response = gastosRecurrentesClient.deleteGastoRecurrente(gastoRecurrenteId);
@@ -199,8 +211,8 @@ public class GastosRecurrentesApiTest extends BaseTest {
 
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateNumericFieldValue(response, "categoria_gasto_id", categoriaGastoId);
+        ResponseValidator.validateFieldExists(response, "data.gastoRecurrente.id");
+        ResponseValidator.validateNumericFieldValue(response, "data.gastoRecurrente.categoria_gasto_id", categoriaGastoId);
     }
 
     @Test
@@ -212,7 +224,7 @@ public class GastosRecurrentesApiTest extends BaseTest {
         GastoRecurrente gastoRecurrente = TestDataFactory.createRandomGastoRecurrente();
         gastoRecurrente.setActivo(true);
         Response createResponse = gastosRecurrentesClient.createGastoRecurrente(gastoRecurrente);
-        String gastoRecurrenteId = createResponse.jsonPath().getString("id");
+        String gastoRecurrenteId = createResponse.jsonPath().getString("data.gastoRecurrente.id");
 
         // Act - Deactivate
         gastoRecurrente.setActivo(false);
@@ -220,7 +232,7 @@ public class GastosRecurrentesApiTest extends BaseTest {
 
         // Assert - Deactivation
         ResponseValidator.validateStatusCode(deactivateResponse, 200);
-        ResponseValidator.validateFieldValue(deactivateResponse, "activo", false);
+        ResponseValidator.validateFieldValue(deactivateResponse, "data.activo", false);
 
         // Act - Reactivate
         gastoRecurrente.setActivo(true);
@@ -228,6 +240,18 @@ public class GastosRecurrentesApiTest extends BaseTest {
 
         // Assert - Reactivation
         ResponseValidator.validateStatusCode(reactivateResponse, 200);
-        ResponseValidator.validateFieldValue(reactivateResponse, "activo", true);
+        ResponseValidator.validateFieldValue(reactivateResponse, "data.activo", true);
+    }
+
+    // Cleanup implementation using Strategy Pattern (SOLID principles)
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+
+        // Only register cleanup strategy for entities this test creates
+        strategies.put(EntityType.GASTO_RECURRENTE, gastoRecurrenteIds ->
+            performCleanup(gastoRecurrenteIds, gastosRecurrentesClient::deleteGastoRecurrente, "gasto recurrente"));
+
+        return strategies;
     }
 }

@@ -22,9 +22,6 @@ public class ResponseValidator {
         int actualStatusCode = response.getStatusCode();
         logger.info("Validating status code. Expected: {}, Actual: {}", expectedStatusCode, actualStatusCode);
         
-        // Attach response details to Allure
-        AllureLogger.attachResponse(response);
-        
         assertThat("Status code validation failed", actualStatusCode, equalTo(expectedStatusCode));
     }
 

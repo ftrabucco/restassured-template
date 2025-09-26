@@ -6,6 +6,7 @@ import models.GastoUnico;
 import models.Ingreso;
 import models.Compra;
 import models.GastoRecurrente;
+import models.DebitoAutomatico;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -244,6 +245,62 @@ public class TestDataFactory {
 
     public static String generateRandomPassword() {
         return faker.internet().password(8, 16, true, true, true);
+    }
+
+    // DebitoAutomatico (Automatic Debit) test data generators
+    public static DebitoAutomatico createRandomDebitoAutomatico() {
+        return new DebitoAutomatico.Builder()
+                .descripcion(faker.commerce().productName())
+                .monto(BigDecimal.valueOf(faker.number().randomDouble(2, 50, 1000)))
+                .diaDePago(faker.number().numberBetween(1, 28))
+                .categoriaGastoId(getRandomCategoriaGastoId())
+                .importanciaGastoId(getRandomImportanciaGastoId())
+                .frecuenciaGastoId(getRandomFrecuenciaGastoId())
+                .tipoPagoId(getRandomTipoPagoId())
+                .tarjetaId(getRandomTarjetaId())
+                .activo(true)
+                .build();
+    }
+
+    public static DebitoAutomatico createDebitoAutomaticoWithSpecificAmount(BigDecimal amount) {
+        return new DebitoAutomatico.Builder()
+                .descripcion("Pago automático mensual")
+                .monto(amount)
+                .diaDePago(15)
+                .categoriaGastoId(1L)
+                .importanciaGastoId(1L)
+                .frecuenciaGastoId(2L)
+                .tipoPagoId(1L)
+                .tarjetaId(1L)
+                .activo(true)
+                .build();
+    }
+
+    public static DebitoAutomatico createDebitoAutomaticoForCategory(Long categoriaGastoId) {
+        return new DebitoAutomatico.Builder()
+                .descripcion(faker.commerce().productName())
+                .monto(BigDecimal.valueOf(faker.number().randomDouble(2, 100, 800)))
+                .diaDePago(faker.number().numberBetween(1, 28))
+                .categoriaGastoId(categoriaGastoId)
+                .importanciaGastoId(getRandomImportanciaGastoId())
+                .frecuenciaGastoId(getRandomFrecuenciaGastoId())
+                .tipoPagoId(getRandomTipoPagoId())
+                .tarjetaId(getRandomTarjetaId())
+                .activo(true)
+                .build();
+    }
+
+    public static DebitoAutomatico createInactiveDebitoAutomatico() {
+        return new DebitoAutomatico.Builder()
+                .descripcion("Débito automático inactivo")
+                .monto(BigDecimal.valueOf(faker.number().randomDouble(2, 30, 200)))
+                .diaDePago(faker.number().numberBetween(1, 28))
+                .categoriaGastoId(getRandomCategoriaGastoId())
+                .importanciaGastoId(getRandomImportanciaGastoId())
+                .frecuenciaGastoId(getRandomFrecuenciaGastoId())
+                .tipoPagoId(getRandomTipoPagoId())
+                .activo(false)
+                .build();
     }
 
 }

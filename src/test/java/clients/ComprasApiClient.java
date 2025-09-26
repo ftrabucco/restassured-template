@@ -3,8 +3,6 @@ package clients;
 import io.qameta.allure.Step;
 import io.restassured.response.Response;
 import models.Compra;
-import utils.AllureLogger;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -36,15 +34,17 @@ public class ComprasApiClient extends ApiClient {
 
     @Step("Create new compra")
     public Response createCompra(Compra compra) {
-        try {
-            String requestBody = objectMapper.writeValueAsString(compra);
-            AllureLogger.addRequestBodyAttachment(requestBody);
-        } catch (JsonProcessingException e) {
-            AllureLogger.addRequestBodyAttachment("Error serializing request: " + e.getMessage());
-        }
-        
-        Response response = post(baseEndpoint, compra);
-        AllureLogger.attachResponse(response);
-        return response;
+        return post(baseEndpoint, compra);
+    }
+
+    @Step("Update compra with ID: {compraId}")
+    public Response updateCompra(String compraId, java.util.Map<String, Object> updatePayload) {
+        String endpoint = baseEndpoint + "/" + compraId;
+        return put(endpoint, updatePayload);
+    }
+
+    @Step("Delete compra with ID: {compraId}")
+    public Response deleteCompra(String compraId) {
+        return delete(baseEndpoint + "/" + compraId);
     }
 }

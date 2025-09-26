@@ -105,7 +105,7 @@ void setUp(TestInfo testInfo) {
 - **Locale support** (Spanish faker for realistic financial data)
 
 ### API Client Architecture
-- **Domain-specific clients** (GastosApiClient, IngresosApiClient)
+- **Domain-specific clients** (GastosApiClient, GastosUnicosApiClient, ComprasApiClient, GastosRecurrentesApiClient, DebitosAutomaticosApiClient)
 - **Fluent API design** for readable test code
 - **Built-in request/response logging**
 - **Automatic authentication handling**
@@ -152,7 +152,16 @@ mvn test -Denv=dev
 
 ### Run specific test class
 ```bash
-mvn test -Dtest=GastosApiTest
+mvn test -Dtest=ComprasE2ETest
+```
+
+### Run E2E test suites
+```bash
+# Run all E2E tests
+mvn test -Dtest="*E2ETest"
+
+# Run specific E2E test
+mvn test -Dtest=GastosUnicosE2ETest
 ```
 
 ### Generate Allure report
@@ -164,26 +173,26 @@ mvn allure:serve
 
 ### 1. Create a new test class
 ```java
-public class GastosApiTest extends BaseTest {
-    private GastosApiClient gastosClient;
-    
-    @Override
-    protected void customSetup() {
-        gastosClient = new GastosApiClient().withRequestSpec(requestSpec);
+public class ComprasApiTest extends BaseTest {
+    private ComprasApiClient comprasClient;
+
+    @BeforeEach
+    void setupTest() {
+        comprasClient = new ComprasApiClient();
     }
-    
+
     @Test
-    @DisplayName("Should create a new gasto successfully")
-    void shouldCreateGastoSuccessfully() {
+    @DisplayName("Should create a new compra successfully")
+    void shouldCreateCompraSuccessfully() {
         // Arrange
-        Gasto newGasto = TestDataFactory.createRandomGasto();
-        
+        Compra newCompra = TestDataFactory.createRandomCompra();
+
         // Act
-        Response response = gastosClient.createGasto(newGasto);
-        
+        Response response = comprasClient.createCompra(newCompra);
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
+        ResponseValidator.validateFieldExists(response, "data.compra.id");
     }
 }
 ```
@@ -191,28 +200,27 @@ public class GastosApiTest extends BaseTest {
 ### 2. Create test data
 ```java
 // Using factory for random data
-Gasto randomGasto = TestDataFactory.createRandomGasto();
+Compra randomCompra = TestDataFactory.createRandomCompra();
 
 // Using builder for specific data
-Gasto specificGasto = new Gasto.Builder()
-    .withDescripcion("Lunch expense")
-    .withMonto(BigDecimal.valueOf(25.50))
-    .withCategoria("Food")
-    .build();
+Compra specificCompra = TestDataFactory.createRandomCompra();
+specificCompra.setDescripcion("Test Purchase");
+specificCompra.setMontoTotal(BigDecimal.valueOf(299.99));
+specificCompra.setCantidadCuotas(3);
 ```
 
 ### 3. Use validation utilities
 ```java
 // Status code validation
-ResponseValidator.validateStatusCode(response, 200);
+ResponseValidator.validateStatusCode(response, 201);
 
 // Field validations
-ResponseValidator.validateFieldExists(response, "data.id");
-ResponseValidator.validateFieldValue(response, "data.categoria", "Food");
-ResponseValidator.validateArrayNotEmpty(response, "data");
+ResponseValidator.validateFieldExists(response, "data.compra.id");
+ResponseValidator.validateFieldExists(response, "data.compra.descripcion");
+ResponseValidator.validateContentType(response, "application/json");
 
 // Performance validation
-ResponseValidator.validateResponseTime(response, 2000);
+ResponseValidator.validateResponseTime(response, 5000);
 ```
 
 ## 🏗️ Extending the Framework

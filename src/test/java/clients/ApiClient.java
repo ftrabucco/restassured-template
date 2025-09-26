@@ -17,6 +17,17 @@ public abstract class ApiClient {
 
     public ApiClient() {
         this.config = ConfigManager.getInstance();
+        // Initialize with basic request specification
+        initializeRequestSpec();
+    }
+    
+    private void initializeRequestSpec() {
+        if (this.requestSpec == null) {
+            this.requestSpec = io.restassured.RestAssured.given()
+                .baseUri(config.getBaseUrl())
+                .contentType("application/json")
+                .accept("application/json");
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -27,20 +38,33 @@ public abstract class ApiClient {
 
     @Step("Execute GET request to {endpoint}")
     protected Response get(String endpoint) {
-        AllureAttachments.attachRequestUrl("GET", endpoint);
         Response response = given(requestSpec)
                 .when()
                 .get(endpoint)
                 .then()
                 .extract()
                 .response();
-        AllureAttachments.attachResponseDetails(response);
+        
+        // Auto-attach request and response details
+        if (endpoint.contains("/") && !endpoint.startsWith("/")) {
+            // Extract path variable from endpoint like "baseEndpoint/123"
+            String[] parts = endpoint.split("/");
+            if (parts.length >= 2) {
+                String baseEndpoint = "/" + parts[0];
+                String pathVariable = parts[parts.length - 1];
+                AllureAttachments.attachResponseByStatusWithPathVars(response, "GET", config.getBaseUrl(), baseEndpoint, pathVariable, null);
+            } else {
+                AllureAttachments.attachResponseByStatusWithRequest(response, "GET", config.getBaseUrl(), endpoint, null);
+            }
+        } else {
+            AllureAttachments.attachResponseByStatusWithRequest(response, "GET", config.getBaseUrl(), endpoint, null);
+        }
+        
         return response;
     }
 
     @Step("Execute POST request to {endpoint}")
     protected Response post(String endpoint, Object body) {
-        AllureAttachments.attachFullRequestDetails("POST", endpoint, body);
         Response response = given(requestSpec)
                 .body(body)
                 .when()
@@ -48,13 +72,14 @@ public abstract class ApiClient {
                 .then()
                 .extract()
                 .response();
-        AllureAttachments.attachResponseDetails(response);
+        
+        // Auto-attach request and response details
+        AllureAttachments.attachResponseByStatusWithRequest(response, "POST", config.getBaseUrl(), endpoint, body);
         return response;
     }
 
     @Step("Execute PUT request to {endpoint}")
     protected Response put(String endpoint, Object body) {
-        AllureAttachments.attachFullRequestDetails("PUT", endpoint, body);
         Response response = given(requestSpec)
                 .body(body)
                 .when()
@@ -62,26 +87,54 @@ public abstract class ApiClient {
                 .then()
                 .extract()
                 .response();
-        AllureAttachments.attachResponseDetails(response);
+        
+        // Auto-attach request and response details
+        if (endpoint.contains("/") && !endpoint.startsWith("/")) {
+            // Extract path variable from endpoint like "baseEndpoint/123"
+            String[] parts = endpoint.split("/");
+            if (parts.length >= 2) {
+                String baseEndpoint = "/" + parts[0];
+                String pathVariable = parts[parts.length - 1];
+                AllureAttachments.attachResponseByStatusWithPathVars(response, "PUT", config.getBaseUrl(), baseEndpoint, pathVariable, body);
+            } else {
+                AllureAttachments.attachResponseByStatusWithRequest(response, "PUT", config.getBaseUrl(), endpoint, body);
+            }
+        } else {
+            AllureAttachments.attachResponseByStatusWithRequest(response, "PUT", config.getBaseUrl(), endpoint, body);
+        }
+        
         return response;
     }
 
     @Step("Execute DELETE request to {endpoint}")
     protected Response delete(String endpoint) {
-        AllureAttachments.attachRequestUrl("DELETE", endpoint);
         Response response = given(requestSpec)
                 .when()
                 .delete(endpoint)
                 .then()
                 .extract()
                 .response();
-        AllureAttachments.attachResponseDetails(response);
+        
+        // Auto-attach request and response details
+        if (endpoint.contains("/") && !endpoint.startsWith("/")) {
+            // Extract path variable from endpoint like "baseEndpoint/123"
+            String[] parts = endpoint.split("/");
+            if (parts.length >= 2) {
+                String baseEndpoint = "/" + parts[0];
+                String pathVariable = parts[parts.length - 1];
+                AllureAttachments.attachResponseByStatusWithPathVars(response, "DELETE", config.getBaseUrl(), baseEndpoint, pathVariable, null);
+            } else {
+                AllureAttachments.attachResponseByStatusWithRequest(response, "DELETE", config.getBaseUrl(), endpoint, null);
+            }
+        } else {
+            AllureAttachments.attachResponseByStatusWithRequest(response, "DELETE", config.getBaseUrl(), endpoint, null);
+        }
+        
         return response;
     }
 
     @Step("Execute PATCH request to {endpoint}")
     protected Response patch(String endpoint, Object body) {
-        AllureAttachments.attachFullRequestDetails("PATCH", endpoint, body);
         Response response = given(requestSpec)
                 .body(body)
                 .when()
@@ -89,7 +142,22 @@ public abstract class ApiClient {
                 .then()
                 .extract()
                 .response();
-        AllureAttachments.attachResponseDetails(response);
+        
+        // Auto-attach request and response details
+        if (endpoint.contains("/") && !endpoint.startsWith("/")) {
+            // Extract path variable from endpoint like "baseEndpoint/123"
+            String[] parts = endpoint.split("/");
+            if (parts.length >= 2) {
+                String baseEndpoint = "/" + parts[0];
+                String pathVariable = parts[parts.length - 1];
+                AllureAttachments.attachResponseByStatusWithPathVars(response, "PATCH", config.getBaseUrl(), baseEndpoint, pathVariable, body);
+            } else {
+                AllureAttachments.attachResponseByStatusWithRequest(response, "PATCH", config.getBaseUrl(), endpoint, body);
+            }
+        } else {
+            AllureAttachments.attachResponseByStatusWithRequest(response, "PATCH", config.getBaseUrl(), endpoint, body);
+        }
+        
         return response;
     }
 }

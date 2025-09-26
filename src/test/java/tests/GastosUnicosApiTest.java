@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.GastosUnicosApiClient;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -13,13 +13,19 @@ import utils.ResponseValidator;
 import utils.TestDataFactory;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import static base.ApiTestWithCleanup.EntityType;
 
 /**
  * Test class for Gastos Únicos (One-time Expenses) API endpoints
  * Demonstrates comprehensive CRUD testing scenarios
  */
 @Feature("Gastos Únicos API")
-public class GastosUnicosApiTest extends BaseTest {
+public class GastosUnicosApiTest extends ApiTestWithCleanup {
     private GastosUnicosApiClient gastosUnicosClient;
 
     @Override
@@ -53,13 +59,16 @@ public class GastosUnicosApiTest extends BaseTest {
         // Act
         Response response = gastosUnicosClient.createGastoUnico(newGastoUnico);
 
+        // Track for cleanup
+        trackEntityFromResponse(response, EntityType.GASTO_UNICO, "data.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateStringFieldValue(response, "descripcion", newGastoUnico.getDescripcion());
-        ResponseValidator.validateNumericFieldValue(response, "categoria_gasto_id", newGastoUnico.getCategoriaGastoId());
-        ResponseValidator.validateNumericFieldValue(response, "importancia_gasto_id", newGastoUnico.getImportanciaGastoId());
-        ResponseValidator.validateNumericFieldValue(response, "tipo_pago_id", newGastoUnico.getTipoPagoId());
+        ResponseValidator.validateFieldExists(response, "data.id");
+        ResponseValidator.validateStringFieldValue(response, "data.descripcion", newGastoUnico.getDescripcion());
+        ResponseValidator.validateNumericFieldValue(response, "data.categoria_gasto_id", newGastoUnico.getCategoriaGastoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.importancia_gasto_id", newGastoUnico.getImportanciaGastoId());
+        ResponseValidator.validateNumericFieldValue(response, "data.tipo_pago_id", newGastoUnico.getTipoPagoId());
     }
 
     @Test
@@ -74,11 +83,14 @@ public class GastosUnicosApiTest extends BaseTest {
         // Act
         Response response = gastosUnicosClient.createGastoUnico(gastoUnico);
 
+        // Track for cleanup
+        trackEntityFromResponse(response, EntityType.GASTO_UNICO, "data.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validatePositiveNumber(response, "monto");
-        ResponseValidator.validateStringFieldValue(response, "descripcion", "Reparación auto");
+        ResponseValidator.validateFieldExists(response, "data.id");
+        ResponseValidator.validatePositiveNumber(response, "data.monto");
+        ResponseValidator.validateStringFieldValue(response, "data.descripcion", "Reparación auto");
     }
 
     @Test
@@ -89,7 +101,7 @@ public class GastosUnicosApiTest extends BaseTest {
         // Arrange
         GastoUnico newGastoUnico = TestDataFactory.createRandomGastoUnico();
         Response createResponse = gastosUnicosClient.createGastoUnico(newGastoUnico);
-        String gastoUnicoId = createResponse.jsonPath().getString("id");
+        String gastoUnicoId = createResponse.jsonPath().getString("data.id");
 
         // Act
         Response response = gastosUnicosClient.getGastoUnicoById(gastoUnicoId);
@@ -97,19 +109,19 @@ public class GastosUnicosApiTest extends BaseTest {
         // Assert
         ResponseValidator.validateStatusCode(response, 200);
         ResponseValidator.validateContentType(response, "application/json");
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateStringFieldValue(response, "id", gastoUnicoId);
+        ResponseValidator.validateFieldExists(response, "data.id");
+        ResponseValidator.validateStringFieldValue(response, "data.id", gastoUnicoId);
     }
 
     @Test
     @Story("Update gasto único")
-    @DisplayName("Should not update gasto único successfully as is not allowed")
-    @Description("Verify that an existing gasto único can not be updated with new data")
-    void shouldNotUpdateGastoUnicoSuccessfully() {
+    @DisplayName("Should update gasto único successfully")
+    @Description("Verify that an existing gasto único can be updated with new data")
+    void shouldUpdateGastoUnicoSuccessfully() {
         // Arrange
         GastoUnico originalGastoUnico = TestDataFactory.createRandomGastoUnico();
         Response createResponse = gastosUnicosClient.createGastoUnico(originalGastoUnico);
-        String gastoUnicoId = createResponse.jsonPath().getString("id");
+        String gastoUnicoId = createResponse.jsonPath().getString("data.id");
 
         GastoUnico updatedGastoUnico = TestDataFactory.createGastoUnicoWithSpecificAmount(BigDecimal.valueOf(750.00));
         updatedGastoUnico.setDescripcion("Reparación auto actualizada");
@@ -118,30 +130,30 @@ public class GastosUnicosApiTest extends BaseTest {
         Response response = gastosUnicosClient.updateGastoUnico(gastoUnicoId, updatedGastoUnico);
 
         // Assert
-        ResponseValidator.validateStatusCode(response, 400);
-        //ResponseValidator.validateStringFieldValue(response, "descripcion", "Reparación auto actualizada");
-        //ResponseValidator.validateFieldExists(response, "id");
+        ResponseValidator.validateStatusCode(response, 200);
+        ResponseValidator.validateStringFieldValue(response, "data.descripcion", "Reparación auto actualizada");
+        ResponseValidator.validateFieldExists(response, "data.id");
     }
 
     @Test
     @Story("Delete gasto único")
-    @DisplayName("Should not delete gasto único successfully as is not allowed")
-    @Description("Verify that an existing gasto único can not be deleted")
-    void shouldNotDeleteGastoUnicoSuccessfully() {
+    @DisplayName("Should delete gasto único successfully")
+    @Description("Verify that an existing gasto único can be deleted")
+    void shouldDeleteGastoUnicoSuccessfully() {
         // Arrange
         GastoUnico newGastoUnico = TestDataFactory.createRandomGastoUnico();
         Response createResponse = gastosUnicosClient.createGastoUnico(newGastoUnico);
-        String gastoUnicoId = createResponse.jsonPath().getString("id");
+        String gastoUnicoId = createResponse.jsonPath().getString("data.id");
 
         // Act
         Response response = gastosUnicosClient.deleteGastoUnico(gastoUnicoId);
 
         // Assert
-        ResponseValidator.validateStatusCode(response, 400);
+        ResponseValidator.validateStatusCode(response, 200);
         
         // Verify the gasto único is actually deleted
-        //Response getResponse = gastosUnicosClient.getGastoUnicoById(gastoUnicoId);
-        //ResponseValidator.validateStatusCode(getResponse, 404);
+        Response getResponse = gastosUnicosClient.getGastoUnicoById(gastoUnicoId);
+        ResponseValidator.validateStatusCode(getResponse, 404);
     }
 
     @Test
@@ -191,7 +203,19 @@ public class GastosUnicosApiTest extends BaseTest {
 
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        ResponseValidator.validateFieldExists(response, "id");
-        ResponseValidator.validateNumericFieldValue(response, "categoria_gasto_id", categoriaGastoId);
+        ResponseValidator.validateFieldExists(response, "data.id");
+        ResponseValidator.validateNumericFieldValue(response, "data.categoria_gasto_id", categoriaGastoId);
+    }
+
+    // Cleanup implementation using Strategy Pattern (SOLID principles)
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+
+        // Only register cleanup strategy for entities this test creates
+        strategies.put(EntityType.GASTO_UNICO, gastoUnicoIds ->
+            performCleanup(gastoUnicoIds, gastosUnicosClient::deleteGastoUnico, "gasto único"));
+
+        return strategies;
     }
 }

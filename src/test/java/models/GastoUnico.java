@@ -1,5 +1,6 @@
 package models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
@@ -10,7 +11,7 @@ import java.time.LocalDate;
  * Demonstrates Builder pattern implementation
  */
 public class GastoUnico {
-    @JsonProperty("id")
+    @JsonIgnore
     private Long id;
     
     @JsonProperty("descripcion")

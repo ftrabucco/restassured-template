@@ -1,0 +1,12 @@
+{
+    "servers": {
+      "finanzas-api": {
+        "command": "node",
+        "args": ["mcp-server.js"],
+        "env": {
+          "API_BASE_URL": "http://localhost:3030",
+          "NODE_ENV": "test"
+        }
+      }
+    }
+  }
