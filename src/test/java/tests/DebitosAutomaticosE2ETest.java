@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.DebitosAutomaticosApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.qameta.allure.*;
@@ -13,7 +13,12 @@ import utils.TestDataFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
+import static base.ApiTestWithCleanup.EntityType;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -23,21 +28,25 @@ import static org.junit.jupiter.api.Assertions.*;
 @Feature("Débitos Automáticos E2E with Real Processing")
 @DisplayName("Débitos Automáticos End-to-End Tests with Real Processing")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class DebitosAutomaticosE2ETest extends BaseTest {
+public class DebitosAutomaticosE2ETest extends ApiTestWithCleanup {
 
-    private static DebitosAutomaticosApiClient debitosAutomaticosClient;
+    private DebitosAutomaticosApiClient debitosAutomaticosClient;
     private static McpServerConnector mcpConnector;
     private static JsonNode businessRules;
-    
+
     // Shared test data
     private static DebitoAutomatico createdDebitoAutomatico;
     private static String createdDebitoAutomaticoId;
-    
+
     @BeforeAll
     public static void setUpE2ETest() {
-        debitosAutomaticosClient = new DebitosAutomaticosApiClient();
         mcpConnector = McpServerConnector.getInstance();
         businessRules = mcpConnector.getBusinessRules();
+    }
+
+    @Override
+    protected void customAuthenticatedSetup() {
+        debitosAutomaticosClient = new DebitosAutomaticosApiClient().withRequestSpec(requestSpec);
     }
 
 
@@ -371,18 +380,24 @@ public class DebitosAutomaticosE2ETest extends BaseTest {
 
     @AfterAll
     static void teardownE2ETest() {
-        // Final cleanup in case tests failed before reaching DELETE step
-        if (createdDebitoAutomaticoId != null) {
-            try {
-                Response cleanupResponse = debitosAutomaticosClient.getDebitoAutomaticoById(createdDebitoAutomaticoId);
-                if (cleanupResponse.getStatusCode() == 200) {
-                    System.out.println("🧹 Final cleanup - deleting orphaned débito automático: " + createdDebitoAutomaticoId);
-                    debitosAutomaticosClient.deleteDebitoAutomatico(createdDebitoAutomaticoId);
-                }
-            } catch (Exception e) {
-                System.out.println("⚠️ Final cleanup attempt failed: " + e.getMessage());
-            }
-        }
+        // Final cleanup is now handled by ApiTestWithCleanup automatically
+        // Static variables for tracking are cleared here
+        createdDebitoAutomaticoId = null;
+        createdDebitoAutomatico = null;
+
         System.out.println("🏁 Débitos Automáticos E2E Test Suite completed");
+    }
+
+    // Cleanup implementation for ApiTestWithCleanup
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+
+        // E2E tests handle their own cleanup in test steps
+        // This is mainly for safety in case of test failures
+        strategies.put(EntityType.DEBITO_AUTOMATICO, debitoAutomaticoIds ->
+            performCleanup(debitoAutomaticoIds, debitosAutomaticosClient::deleteDebitoAutomatico, "débito automático"));
+
+        return strategies;
     }
 }

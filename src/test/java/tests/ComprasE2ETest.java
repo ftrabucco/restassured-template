@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.ComprasApiClient;
 import clients.GastosApiClient;
 import io.qameta.allure.*;
@@ -12,8 +12,11 @@ import utils.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
+import static base.ApiTestWithCleanup.EntityType;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -30,20 +33,20 @@ import static org.junit.jupiter.api.Assertions.*;
 @Feature("Compras E2E Flow")
 @DisplayName("Compras End-to-End Test Suite")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class ComprasE2ETest extends BaseTest {
+public class ComprasE2ETest extends ApiTestWithCleanup {
 
-    private static ComprasApiClient comprasClient;
-    private static GastosApiClient gastosClient;
+    private ComprasApiClient comprasClient;
+    private GastosApiClient gastosClient;
 
     // Static variables to maintain state across test methods
     private static String createdCompraId;
     private static Compra createdCompra;
     private static Compra originalCompra;
 
-    @BeforeAll
-    static void setupE2ETest() {
-        comprasClient = new ComprasApiClient();
-        gastosClient = new GastosApiClient();
+    @Override
+    protected void customAuthenticatedSetup() {
+        comprasClient = new ComprasApiClient().withRequestSpec(requestSpec);
+        gastosClient = new GastosApiClient().withRequestSpec(requestSpec);
 
         System.out.println("🚀 Starting Compras E2E Test Suite");
         System.out.println("Testing complete flow: CREATE → READ → UPDATE → LIST → GENERATE → DELETE");
@@ -51,18 +54,12 @@ public class ComprasE2ETest extends BaseTest {
 
     @AfterAll
     static void teardownE2ETest() {
-        // Final cleanup in case tests failed before reaching DELETE step
-        if (createdCompraId != null) {
-            try {
-                Response cleanupResponse = comprasClient.getCompraById(createdCompraId);
-                if (cleanupResponse.getStatusCode() == 200) {
-                    System.out.println("🧹 Final cleanup - deleting orphaned compra: " + createdCompraId);
-                    comprasClient.deleteCompra(createdCompraId);
-                }
-            } catch (Exception e) {
-                System.out.println("⚠️ Final cleanup attempt failed: " + e.getMessage());
-            }
-        }
+        // Final cleanup is now handled by ApiTestWithCleanup automatically
+        // Static variables for tracking are cleared here
+        createdCompraId = null;
+        createdCompra = null;
+        originalCompra = null;
+
         System.out.println("🏁 Compras E2E Test Suite completed");
     }
 
@@ -440,4 +437,16 @@ public class ComprasE2ETest extends BaseTest {
         System.out.println("===========================\n");
     }
 
+    // Cleanup implementation for ApiTestWithCleanup
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+
+        // E2E tests handle their own cleanup in test steps
+        // This is mainly for safety in case of test failures
+        strategies.put(EntityType.COMPRA, compraIds ->
+            performCleanup(compraIds, comprasClient::deleteCompra, "compra"));
+
+        return strategies;
+    }
 }

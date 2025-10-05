@@ -105,10 +105,11 @@ void setUp(TestInfo testInfo) {
 - **Locale support** (Spanish faker for realistic financial data)
 
 ### API Client Architecture
-- **Domain-specific clients** (GastosApiClient, GastosUnicosApiClient, ComprasApiClient, GastosRecurrentesApiClient, DebitosAutomaticosApiClient)
+- **Domain-specific clients** (GastosApiClient, GastosUnicosApiClient, ComprasApiClient, GastosRecurrentesApiClient, DebitosAutomaticosApiClient, AuthApiClient)
+- **JWT Authentication support** with token management and refresh
 - **Fluent API design** for readable test code
 - **Built-in request/response logging**
-- **Automatic authentication handling**
+- **Automatic test data cleanup** with SOLID principles
 
 ## 📋 Prerequisites
 
@@ -162,6 +163,21 @@ mvn test -Dtest="*E2ETest"
 
 # Run specific E2E test
 mvn test -Dtest=GastosUnicosE2ETest
+
+# Run Authentication E2E test
+mvn test -Dtest=AuthE2ETestWorking
+```
+
+### Run Authentication tests
+```bash
+# Run simple authentication tests
+mvn test -Dtest=AuthSimpleTest
+
+# Run comprehensive auth API tests
+mvn test -Dtest=AuthApiTest
+
+# Run complete authentication E2E flow
+mvn test -Dtest=AuthE2ETestWorking
 ```
 
 ### Generate Allure report
@@ -173,12 +189,12 @@ mvn allure:serve
 
 ### 1. Create a new test class
 ```java
-public class ComprasApiTest extends BaseTest {
+public class ComprasApiTest extends ApiTestWithCleanup {
     private ComprasApiClient comprasClient;
 
-    @BeforeEach
-    void setupTest() {
-        comprasClient = new ComprasApiClient();
+    @Override
+    protected void customSetup() {
+        comprasClient = new ComprasApiClient().withRequestSpec(requestSpec);
     }
 
     @Test
@@ -190,9 +206,21 @@ public class ComprasApiTest extends BaseTest {
         // Act
         Response response = comprasClient.createCompra(newCompra);
 
+        // Track for automatic cleanup
+        trackEntityFromResponse(response, EntityType.COMPRA, "data.compra.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
         ResponseValidator.validateFieldExists(response, "data.compra.id");
+    }
+
+    // Implement cleanup strategies
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+        strategies.put(EntityType.COMPRA, compraIds ->
+            performCleanup(compraIds, comprasClient::deleteCompra, "compra"));
+        return strategies;
     }
 }
 ```
@@ -201,12 +229,20 @@ public class ComprasApiTest extends BaseTest {
 ```java
 // Using factory for random data
 Compra randomCompra = TestDataFactory.createRandomCompra();
+User randomUser = TestDataFactory.createRandomUser();
 
 // Using builder for specific data
 Compra specificCompra = TestDataFactory.createRandomCompra();
 specificCompra.setDescripcion("Test Purchase");
 specificCompra.setMontoTotal(BigDecimal.valueOf(299.99));
 specificCompra.setCantidadCuotas(3);
+
+// Create user with specific credentials
+User testUser = TestDataFactory.createUserWithSpecificData(
+    "Test User",
+    "test@example.com",
+    "Password123"
+);
 ```
 
 ### 3. Use validation utilities
@@ -216,11 +252,149 @@ ResponseValidator.validateStatusCode(response, 201);
 
 // Field validations
 ResponseValidator.validateFieldExists(response, "data.compra.id");
-ResponseValidator.validateFieldExists(response, "data.compra.descripcion");
+ResponseValidator.validateFieldNotExists(response, "data.user.password"); // Security check
+ResponseValidator.validateStringFieldValue(response, "data.user.email", "test@example.com");
+ResponseValidator.validateNumericFieldValue(response, "data.compra.cantidad_cuotas", 12);
 ResponseValidator.validateContentType(response, "application/json");
 
 // Performance validation
 ResponseValidator.validateResponseTime(response, 5000);
+```
+
+## 🔐 Authentication Testing
+
+The framework provides comprehensive JWT-based authentication testing capabilities:
+
+### Authentication Features
+- **User Registration & Login** with password validation
+- **JWT Token Management** with automatic extraction and handling
+- **Profile Management** (get, update profile information)
+- **Password Change** functionality with validation
+- **Session Management** (logout, token invalidation)
+- **Security Testing** (invalid tokens, unauthorized access)
+
+### Authentication Test Examples
+
+#### Simple Authentication Test
+```java
+@Test
+void shouldRegisterAndLoginUser() {
+    // Register new user
+    String requestBody = """
+        {
+            "nombre": "Test User",
+            "email": "test@example.com",
+            "password": "Password123"
+        }
+        """;
+
+    Response registerResponse = given()
+        .header("Content-Type", "application/json")
+        .body(requestBody)
+        .when()
+        .post("/api/auth/register")
+        .then()
+        .statusCode(201)
+        .body("data.user.email", equalTo("test@example.com"))
+        .extract().response();
+
+    // Login with registered user
+    String loginBody = """
+        {
+            "email": "test@example.com",
+            "password": "Password123"
+        }
+        """;
+
+    Response loginResponse = given()
+        .header("Content-Type", "application/json")
+        .body(loginBody)
+        .when()
+        .post("/api/auth/login")
+        .then()
+        .statusCode(200)
+        .body("data.token", notNullValue())
+        .extract().response();
+}
+```
+
+#### Complete E2E Authentication Flow
+```java
+@Test
+@Order(1)
+void step01_shouldRegisterUserSuccessfully() {
+    User testUser = TestDataFactory.createUserForRegistration();
+    Response response = authClient.registerUser(testUser);
+
+    ResponseValidator.validateStatusCode(response, 201);
+    ResponseValidator.validateFieldExists(response, "data.user.id");
+    ResponseValidator.validateFieldNotExists(response, "data.user.password");
+}
+
+@Test
+@Order(2)
+void step02_shouldLoginAndGetToken() {
+    Response response = authClient.loginUser(testUser);
+    jwtToken = authClient.extractJwtToken(response);
+
+    ResponseValidator.validateStatusCode(response, 200);
+    ResponseValidator.validateFieldExists(response, "data.token");
+}
+
+@Test
+@Order(3)
+void step03_shouldAccessProtectedResource() {
+    Response response = authClient.getUserProfile(jwtToken);
+
+    ResponseValidator.validateStatusCode(response, 200);
+    ResponseValidator.validateStringFieldValue(response, "data.user.email", testUser.getEmail());
+}
+```
+
+### Authentication API Endpoints
+
+The framework tests the following authentication endpoints:
+
+| Endpoint | Method | Description | Test Coverage |
+|----------|--------|-------------|---------------|
+| `/api/auth/register` | POST | User registration | ✅ Valid data, invalid email, weak password, duplicate email |
+| `/api/auth/login` | POST | User authentication | ✅ Valid credentials, invalid credentials, non-existent user |
+| `/api/auth/profile` | GET | Get user profile | ✅ Valid token, invalid token |
+| `/api/auth/profile` | PUT | Update profile | ✅ Valid updates, invalid token |
+| `/api/auth/change-password` | POST | Change password | ✅ Valid change, wrong current password, weak new password |
+| `/api/auth/logout` | POST | Session logout | ✅ Valid logout, invalid token |
+
+### Security Test Scenarios
+
+The framework includes comprehensive security testing:
+
+```java
+@Test
+void shouldRejectWeakPasswords() {
+    User invalidUser = TestDataFactory.createUserWithSpecificData(
+        "Test User",
+        "test@example.com",
+        "weak"  // Too short, no uppercase, no digits
+    );
+
+    Response response = authClient.registerUser(invalidUser);
+    ResponseValidator.validateStatusCode(response, 400);
+}
+
+@Test
+void shouldRejectInvalidTokens() {
+    Response response = authClient.getUserProfile("invalid.jwt.token");
+    ResponseValidator.validateStatusCode(response, 401);
+}
+
+@Test
+void shouldPreventPasswordLeakage() {
+    User user = TestDataFactory.createUserForRegistration();
+    Response response = authClient.registerUser(user);
+
+    // Ensure password is never returned in responses
+    ResponseValidator.validateFieldNotExists(response, "data.user.password");
+}
 ```
 
 ## 🏗️ Extending the Framework

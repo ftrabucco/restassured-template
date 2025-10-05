@@ -29,7 +29,7 @@ public class DebitosAutomaticosApiTest extends ApiTestWithCleanup {
     private DebitosAutomaticosApiClient debitosAutomaticosClient;
 
     @Override
-    protected void customSetup() {
+    protected void customAuthenticatedSetup() {
         debitosAutomaticosClient = new DebitosAutomaticosApiClient().withRequestSpec(requestSpec);
     }
 
@@ -59,9 +59,12 @@ public class DebitosAutomaticosApiTest extends ApiTestWithCleanup {
         // Act
         Response response = debitosAutomaticosClient.createDebitoAutomatico(newDebitoAutomatico);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.DEBITO_AUTOMATICO, "data.debitoAutomatico.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        
+
         // Debug: Log response structure
         System.out.println("=== DÉBITOS AUTOMÁTICOS CREATE RESPONSE ===");
         System.out.println(response.getBody().asString());
@@ -299,5 +302,75 @@ public class DebitosAutomaticosApiTest extends ApiTestWithCleanup {
             performCleanup(debitoAutomaticoIds, debitosAutomaticosClient::deleteDebitoAutomatico, "débito automático"));
 
         return strategies;
+    }
+
+    // ===============================
+    // SECURITY TESTS - Authentication
+    // ===============================
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when no authentication token provided")
+    @Description("Verify that requests without JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithoutAuthToken() {
+        // Arrange
+        DebitosAutomaticosApiClient unauthenticatedClient = new DebitosAutomaticosApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        // Act
+        Response response = unauthenticatedClient.getAllDebitosAutomaticos();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with invalid authentication token")
+    @Description("Verify that requests with invalid JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithInvalidToken() {
+        // Arrange
+        DebitosAutomaticosApiClient invalidTokenClient = new DebitosAutomaticosApiClient()
+            .withRequestSpec(getInvalidTokenRequestSpec());
+
+        // Act
+        Response response = invalidTokenClient.getAllDebitosAutomaticos();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with malformed authentication token")
+    @Description("Verify that requests with malformed JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithMalformedToken() {
+        // Arrange
+        DebitosAutomaticosApiClient malformedTokenClient = new DebitosAutomaticosApiClient()
+            .withRequestSpec(getMalformedTokenRequestSpec());
+
+        // Act
+        Response response = malformedTokenClient.getAllDebitosAutomaticos();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when creating débito automático without authentication")
+    @Description("Verify that creation operations require authentication")
+    void shouldReturn401WhenCreatingWithoutAuth() {
+        // Arrange
+        DebitosAutomaticosApiClient unauthenticatedClient = new DebitosAutomaticosApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        DebitoAutomatico newDebitoAutomatico = TestDataFactory.createRandomDebitoAutomatico();
+
+        // Act
+        Response response = unauthenticatedClient.createDebitoAutomatico(newDebitoAutomatico);
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
     }
 }

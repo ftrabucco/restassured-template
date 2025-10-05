@@ -1,7 +1,13 @@
 package base;
 
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import utils.AuthenticationHelper;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,15 +18,22 @@ import java.util.function.Function;
  * Base class for API tests that automatically handles cleanup of created test data
  * Follows SOLID principles with Strategy Pattern for cleanup operations
  * Implements DRY principle by centralizing common cleanup logic
+ * Includes automatic JWT authentication for protected API endpoints
  */
 public abstract class ApiTestWithCleanup extends BaseTest {
+
+    // Static JWT token for authenticated requests - shared across all test instances
+    protected static String jwtToken;
+    protected static AuthenticationHelper authHelper;
 
     // Entity type enum for better type safety (Single Responsibility)
     public enum EntityType {
         COMPRA("compra"),
         GASTO_UNICO("gasto único"),
         GASTO_RECURRENTE("gasto recurrente"),
-        DEBITO_AUTOMATICO("débito automático");
+        DEBITO_AUTOMATICO("débito automático"),
+        TARJETA("tarjeta"),
+        USER("user");
 
         private final String displayName;
 
@@ -36,11 +49,80 @@ public abstract class ApiTestWithCleanup extends BaseTest {
     // Single data structure to track all entities (DRY principle)
     private final Map<EntityType, List<String>> trackedEntities = new HashMap<>();
 
+    /**
+     * Setup authentication before any test class runs
+     * This ensures we have a valid JWT token for all API requests
+     */
+    @BeforeAll
+    static void setupAuthentication() {
+        authHelper = AuthenticationHelper.getInstance();
+        jwtToken = authHelper.getJwtToken();
+        System.out.println("🔐 Authentication setup completed for API tests");
+    }
+
     public ApiTestWithCleanup() {
         // Initialize tracking lists for all entity types
         for (EntityType type : EntityType.values()) {
             trackedEntities.put(type, new ArrayList<>());
         }
+    }
+
+    /**
+     * Override the customSetup to add JWT authentication to request spec
+     */
+    @Override
+    protected void customSetup() {
+        // Add JWT token to request specification for authenticated requests
+        if (jwtToken != null) {
+            requestSpec = requestSpec.header("Authorization", "Bearer " + jwtToken);
+        }
+
+        // Call the specific setup for each test class
+        customAuthenticatedSetup();
+    }
+
+    /**
+     * Hook for test classes to implement custom setup with authentication already configured
+     * This replaces the old customSetup() method
+     */
+    protected void customAuthenticatedSetup() {
+        // Override in subclasses if needed
+    }
+
+    /**
+     * Get request specification without authentication (for security testing)
+     */
+    protected RequestSpecification getUnauthenticatedRequestSpec() {
+        // Build a fresh request spec without any authentication headers
+        return new RequestSpecBuilder()
+                .setBaseUri(config.getBaseUrl())
+                .setContentType(ContentType.JSON)
+                .setAccept(ContentType.JSON)
+                .build();
+    }
+
+    /**
+     * Get request specification with invalid token (for security testing)
+     */
+    protected RequestSpecification getInvalidTokenRequestSpec() {
+        return new RequestSpecBuilder()
+                .setBaseUri(config.getBaseUrl())
+                .setContentType(ContentType.JSON)
+                .setAccept(ContentType.JSON)
+                .addHeader("Authorization", "Bearer " + authHelper.getInvalidToken())
+                .build();
+    }
+
+    /**
+     * Get request specification with malformed token (for security testing)
+     */
+    protected RequestSpecification getMalformedTokenRequestSpec() {
+        return new RequestSpecBuilder()
+                .setBaseUri(config.getBaseUrl())
+                .setContentType(ContentType.JSON)
+                .setAccept(ContentType.JSON)
+                .addHeader("Authorization", "Bearer " + authHelper.getMalformedToken())
+                .build();
     }
 
     /**
@@ -72,6 +154,10 @@ public abstract class ApiTestWithCleanup extends BaseTest {
 
     protected void trackCreatedDebitoAutomatico(String debitoAutomaticoId) {
         trackCreatedEntity(EntityType.DEBITO_AUTOMATICO, debitoAutomaticoId);
+    }
+
+    protected void trackCreatedTarjeta(String tarjetaId) {
+        trackCreatedEntity(EntityType.TARJETA, tarjetaId);
     }
 
     /**

@@ -81,8 +81,43 @@ public class AllureLogger {
     
     public static void addJsonAttachment(String name, String jsonContent) {
         if (jsonContent != null) {
-            Allure.addAttachment(name, "application/json", 
+            Allure.addAttachment(name, "application/json",
                 new ByteArrayInputStream(jsonContent.getBytes(StandardCharsets.UTF_8)), ".json");
         }
+    }
+
+    /**
+     * Log informational message to Allure step
+     */
+    public static void logInfo(String message) {
+        Allure.step(message);
+    }
+
+    /**
+     * Log test step to Allure report
+     */
+    public static void logStep(String stepDescription) {
+        Allure.step(stepDescription);
+    }
+
+    /**
+     * Log warning message to Allure
+     */
+    public static void logWarning(String message) {
+        Allure.step("⚠️ " + message);
+    }
+
+    /**
+     * Log error message to Allure
+     */
+    public static void logError(String message) {
+        Allure.step("❌ " + message);
+    }
+
+    /**
+     * Log success message to Allure
+     */
+    public static void logSuccess(String message) {
+        Allure.step("✅ " + message);
     }
 }

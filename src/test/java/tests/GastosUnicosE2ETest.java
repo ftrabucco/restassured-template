@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.GastosUnicosApiClient;
 import clients.GastosApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,8 +16,11 @@ import utils.TestDataFactory;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
+import static base.ApiTestWithCleanup.EntityType;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -27,25 +30,29 @@ import static org.junit.jupiter.api.Assertions.*;
 @Feature("Gastos Únicos E2E")
 @DisplayName("Gastos Únicos End-to-End Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class GastosUnicosE2ETest extends BaseTest {
+public class GastosUnicosE2ETest extends ApiTestWithCleanup {
 
-    private static GastosUnicosApiClient gastosUnicosClient;
-    private static GastosApiClient gastosClient;
+    private GastosUnicosApiClient gastosUnicosClient;
+    private GastosApiClient gastosClient;
     private static McpServerConnector mcpConnector;
     private static JsonNode businessRules;
-    
+
     // Shared test data across test methods
     private static GastoUnico createdGasto;
     private static String createdGastoId;
     private static String realGastoId;
     private static GastoUnico originalGasto; // Store original data before updates
-    
+
     @BeforeAll
     public static void setUpE2ETest() {
-        gastosUnicosClient = new GastosUnicosApiClient();
-        gastosClient = new GastosApiClient();
         mcpConnector = McpServerConnector.getInstance();
         businessRules = mcpConnector.getBusinessRules();
+    }
+
+    @Override
+    protected void customAuthenticatedSetup() {
+        gastosUnicosClient = new GastosUnicosApiClient().withRequestSpec(requestSpec);
+        gastosClient = new GastosApiClient().withRequestSpec(requestSpec);
     }
 
 
@@ -169,7 +176,7 @@ public class GastosUnicosE2ETest extends BaseTest {
 
         // Find the auto-generated real gasto using efficient filtered search
         String realGastoId = findGeneratedRealGastoForUnico(createdGastoId);
-        assertNotNull(realGastoId, "Real gasto should be auto-generated immediately when gasto único is created");
+        assertNotNull(realGastoId, "Real gasto should be auto-generated when gasto único is created");
 
         // Validate the real gasto exists by direct GET
         Response realGastoResponse = validateRealGastoExists(realGastoId);
@@ -790,7 +797,7 @@ public class GastosUnicosE2ETest extends BaseTest {
             // Since we filtered by tipo_origen=unico and id_origen, the first result should be our gasto
             var gasto = gastosResponse.jsonPath().getMap("data[0]");
             if (gasto != null) {
-                System.out.println("Found auto-generated real gasto with ID: " + gasto.get("id") +
+                System.out.println("✅ Found auto-generated real gasto with ID: " + gasto.get("id") +
                                  " for gasto único: " + gastoUnicoId);
                 return gasto.get("id").toString();
             }
@@ -800,6 +807,7 @@ public class GastosUnicosE2ETest extends BaseTest {
             return null;
         }
     }
+
 
     @Step("Validate real gasto exists by ID: {realGastoId}")
     private Response validateRealGastoExists(String realGastoId) {
@@ -868,18 +876,26 @@ public class GastosUnicosE2ETest extends BaseTest {
 
     @AfterAll
     static void teardownE2ETest() {
-        // Final cleanup in case tests failed before reaching DELETE step
-        if (createdGastoId != null) {
-            try {
-                Response cleanupResponse = gastosUnicosClient.getGastoUnicoById(createdGastoId);
-                if (cleanupResponse.getStatusCode() == 200) {
-                    System.out.println("🧹 Final cleanup - deleting orphaned gasto único: " + createdGastoId);
-                    gastosUnicosClient.deleteGastoUnico(createdGastoId);
-                }
-            } catch (Exception e) {
-                System.out.println("⚠️ Final cleanup attempt failed: " + e.getMessage());
-            }
-        }
+        // Final cleanup is now handled by ApiTestWithCleanup automatically
+        // Static variables for tracking are cleared here
+        createdGastoId = null;
+        createdGasto = null;
+        originalGasto = null;
+        realGastoId = null;
+
         System.out.println("🏁 Gastos Únicos E2E Test Suite completed");
+    }
+
+    // Cleanup implementation for ApiTestWithCleanup
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+
+        // E2E tests handle their own cleanup in test steps
+        // This is mainly for safety in case of test failures
+        strategies.put(EntityType.GASTO_UNICO, gastoUnicoIds ->
+            performCleanup(gastoUnicoIds, gastosUnicosClient::deleteGastoUnico, "gasto único"));
+
+        return strategies;
     }
 }

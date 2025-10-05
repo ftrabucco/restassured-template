@@ -29,7 +29,7 @@ public class GastosUnicosApiTest extends ApiTestWithCleanup {
     private GastosUnicosApiClient gastosUnicosClient;
 
     @Override
-    protected void customSetup() {
+    protected void customAuthenticatedSetup() {
         gastosUnicosClient = new GastosUnicosApiClient().withRequestSpec(requestSpec);
     }
 
@@ -59,7 +59,7 @@ public class GastosUnicosApiTest extends ApiTestWithCleanup {
         // Act
         Response response = gastosUnicosClient.createGastoUnico(newGastoUnico);
 
-        // Track for cleanup
+        // Track for cleanup using improved method
         trackEntityFromResponse(response, EntityType.GASTO_UNICO, "data.id");
 
         // Assert
@@ -83,7 +83,7 @@ public class GastosUnicosApiTest extends ApiTestWithCleanup {
         // Act
         Response response = gastosUnicosClient.createGastoUnico(gastoUnico);
 
-        // Track for cleanup
+        // Track for cleanup using improved method
         trackEntityFromResponse(response, EntityType.GASTO_UNICO, "data.id");
 
         // Assert
@@ -102,6 +102,9 @@ public class GastosUnicosApiTest extends ApiTestWithCleanup {
         GastoUnico newGastoUnico = TestDataFactory.createRandomGastoUnico();
         Response createResponse = gastosUnicosClient.createGastoUnico(newGastoUnico);
         String gastoUnicoId = createResponse.jsonPath().getString("data.id");
+
+        // Track for cleanup
+        trackCreatedGastoUnico(gastoUnicoId);
 
         // Act
         Response response = gastosUnicosClient.getGastoUnicoById(gastoUnicoId);
@@ -125,6 +128,9 @@ public class GastosUnicosApiTest extends ApiTestWithCleanup {
 
         GastoUnico updatedGastoUnico = TestDataFactory.createGastoUnicoWithSpecificAmount(BigDecimal.valueOf(750.00));
         updatedGastoUnico.setDescripcion("Reparación auto actualizada");
+
+        // Track for cleanup
+        trackCreatedGastoUnico(gastoUnicoId);
 
         // Act
         Response response = gastosUnicosClient.updateGastoUnico(gastoUnicoId, updatedGastoUnico);
@@ -201,6 +207,9 @@ public class GastosUnicosApiTest extends ApiTestWithCleanup {
         // Act
         Response response = gastosUnicosClient.createGastoUnico(gastoUnico);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.GASTO_UNICO, "data.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
         ResponseValidator.validateFieldExists(response, "data.id");
@@ -217,5 +226,75 @@ public class GastosUnicosApiTest extends ApiTestWithCleanup {
             performCleanup(gastoUnicoIds, gastosUnicosClient::deleteGastoUnico, "gasto único"));
 
         return strategies;
+    }
+
+    // ===============================
+    // SECURITY TESTS - Authentication
+    // ===============================
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when no authentication token provided")
+    @Description("Verify that requests without JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithoutAuthToken() {
+        // Arrange
+        GastosUnicosApiClient unauthenticatedClient = new GastosUnicosApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        // Act
+        Response response = unauthenticatedClient.getAllGastosUnicos();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with invalid authentication token")
+    @Description("Verify that requests with invalid JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithInvalidToken() {
+        // Arrange
+        GastosUnicosApiClient invalidTokenClient = new GastosUnicosApiClient()
+            .withRequestSpec(getInvalidTokenRequestSpec());
+
+        // Act
+        Response response = invalidTokenClient.getAllGastosUnicos();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with malformed authentication token")
+    @Description("Verify that requests with malformed JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithMalformedToken() {
+        // Arrange
+        GastosUnicosApiClient malformedTokenClient = new GastosUnicosApiClient()
+            .withRequestSpec(getMalformedTokenRequestSpec());
+
+        // Act
+        Response response = malformedTokenClient.getAllGastosUnicos();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when creating gasto único without authentication")
+    @Description("Verify that creation operations require authentication")
+    void shouldReturn401WhenCreatingWithoutAuth() {
+        // Arrange
+        GastosUnicosApiClient unauthenticatedClient = new GastosUnicosApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        GastoUnico newGastoUnico = TestDataFactory.createRandomGastoUnico();
+
+        // Act
+        Response response = unauthenticatedClient.createGastoUnico(newGastoUnico);
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
     }
 }

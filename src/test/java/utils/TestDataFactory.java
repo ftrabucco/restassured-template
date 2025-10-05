@@ -7,6 +7,8 @@ import models.Ingreso;
 import models.Compra;
 import models.GastoRecurrente;
 import models.DebitoAutomatico;
+import models.Tarjeta;
+import models.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -235,6 +237,49 @@ public class TestDataFactory {
     }
 
     // User data generators
+    public static User createRandomUser() {
+        return new User.Builder()
+                .nombre(faker.name().fullName())
+                .email(faker.internet().emailAddress())
+                .password(generateValidPassword())
+                .build();
+    }
+
+    public static User createUserWithSpecificData(String nombre, String email, String password) {
+        return new User.Builder()
+                .nombre(nombre)
+                .email(email)
+                .password(password)
+                .build();
+    }
+
+    public static User createTestUser() {
+        return new User.Builder()
+                .nombre("Test User")
+                .email("test@example.com")
+                .password("Password123")
+                .build();
+    }
+
+    public static User createUserForRegistration() {
+        return new User.Builder()
+                .nombre(faker.name().fullName())
+                .email(faker.internet().emailAddress())
+                .password(generateValidPassword())
+                .build();
+    }
+
+    /**
+     * Generate a password that meets API requirements:
+     * - Minimum 6 characters
+     * - At least 1 uppercase letter
+     * - At least 1 lowercase letter
+     * - At least 1 digit
+     */
+    public static String generateValidPassword() {
+        return "Test" + faker.number().numberBetween(100, 999) + "!";
+    }
+
     public static String generateRandomEmail() {
         return faker.internet().emailAddress();
     }
@@ -301,6 +346,175 @@ public class TestDataFactory {
                 .tipoPagoId(getRandomTipoPagoId())
                 .activo(false)
                 .build();
+    }
+
+    // ====== TARJETA (CARD) TEST DATA GENERATORS - MCP FORMAT ======
+
+    public static Tarjeta createValidCreditCard() {
+        return Tarjeta.builder()
+                .nombre("Tarjeta Crédito " + faker.number().digits(4))
+                .tipo("credito")
+                .banco(getRandomBanco())
+                .diaMesCierre(faker.number().numberBetween(1, 28))
+                .diaMesVencimiento(faker.number().numberBetween(1, 28))
+                .permiteCuotas(true)
+                .usuarioId(1)
+                .build();
+    }
+
+    public static Tarjeta createValidDebitCard() {
+        return Tarjeta.builder()
+                .nombre("Tarjeta Débito " + faker.number().digits(4))
+                .tipo("debito")
+                .banco(getRandomBanco())
+                .diaMesCierre(null)
+                .diaMesVencimiento(null)
+                .permiteCuotas(false)
+                .usuarioId(1)
+                .build();
+    }
+
+    public static Tarjeta createRandomCreditCard() {
+        return createValidCreditCard();
+    }
+
+    public static Tarjeta createRandomDebitCard() {
+        return createValidDebitCard();
+    }
+
+    public static Tarjeta createCreditCardForBanco(String banco) {
+        return Tarjeta.builder()
+                .nombre("Tarjeta " + banco)
+                .tipo("credito")
+                .banco(banco)
+                .diaMesCierre(15)
+                .diaMesVencimiento(25)
+                .permiteCuotas(true)
+                .usuarioId(1)
+                .build();
+    }
+
+    public static Tarjeta createDebitCardForBanco(String banco) {
+        return Tarjeta.builder()
+                .nombre("Débito " + banco)
+                .tipo("debito")
+                .banco(banco)
+                .diaMesCierre(null)
+                .diaMesVencimiento(null)
+                .permiteCuotas(false)
+                .usuarioId(1)
+                .build();
+    }
+
+    public static Tarjeta createTarjetaWithMissingRequiredFields() {
+        return Tarjeta.builder()
+                .banco("Banco Test")
+                .tipo("credito")
+                .usuarioId(1)
+                .build();
+    }
+
+    public static Tarjeta createTarjetaWithInvalidTipo() {
+        return Tarjeta.builder()
+                .nombre("Tarjeta Inválida")
+                .tipo("invalido")
+                .banco("Banco Test")
+                .usuarioId(1)
+                .build();
+    }
+
+    private static String getRandomBanco() {
+        String[] bancos = {
+                "Banco Nación", "Banco Provincia", "Banco Ciudad",
+                "BBVA", "Santander", "Macro", "Galicia", "ICBC",
+                "Banco Piano", "Banco Supervielle", "Brubank"
+        };
+        return bancos[faker.number().numberBetween(0, bancos.length)];
+    }
+
+    // ====== TARJETA UTILITY METHODS ======
+
+    /**
+     * Generate a valid card number using Luhn algorithm
+     */
+    public static String generateValidCardNumber() {
+        // Generate 15 digits and calculate Luhn checksum for the 16th
+        String prefix = "4532"; // Visa prefix for testing
+        StringBuilder cardNumber = new StringBuilder(prefix);
+
+        // Add 11 more random digits
+        for (int i = 0; i < 11; i++) {
+            cardNumber.append(faker.number().numberBetween(0, 9));
+        }
+
+        // Calculate Luhn checksum
+        int checksum = calculateLuhnChecksum(cardNumber.toString());
+        cardNumber.append(checksum);
+
+        return cardNumber.toString();
+    }
+
+    /**
+     * Generate invalid card number (fails Luhn algorithm)
+     */
+    public static String generateInvalidCardNumber() {
+        return "1234567890123456"; // Known invalid number
+    }
+
+    /**
+     * Generate future expiry date in MM/YY format
+     */
+    public static String generateFutureExpiryDate() {
+        int month = faker.number().numberBetween(1, 12);
+        int year = LocalDate.now().getYear() + faker.number().numberBetween(1, 5);
+        return String.format("%02d/%02d", month, year % 100);
+    }
+
+    /**
+     * Generate past expiry date in MM/YY format
+     */
+    public static String generatePastExpiryDate() {
+        int month = faker.number().numberBetween(1, 12);
+        int year = LocalDate.now().getYear() - faker.number().numberBetween(1, 3);
+        return String.format("%02d/%02d", month, year % 100);
+    }
+
+    /**
+     * Generate CVV code
+     */
+    public static String generateCvv() {
+        return String.format("%03d", faker.number().numberBetween(100, 999));
+    }
+
+    /**
+     * Generate bank account number
+     */
+    public static String generateAccountNumber() {
+        return String.format("%020d", faker.number().randomNumber(20, true));
+    }
+
+    /**
+     * Calculate Luhn checksum for card number validation
+     */
+    private static int calculateLuhnChecksum(String cardNumber) {
+        int sum = 0;
+        boolean alternate = true;
+
+        for (int i = cardNumber.length() - 1; i >= 0; i--) {
+            int digit = Character.getNumericValue(cardNumber.charAt(i));
+
+            if (alternate) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit = (digit % 10) + 1;
+                }
+            }
+
+            sum += digit;
+            alternate = !alternate;
+        }
+
+        return (10 - (sum % 10)) % 10;
     }
 
 }

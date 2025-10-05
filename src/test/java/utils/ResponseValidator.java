@@ -38,6 +38,13 @@ public class ResponseValidator {
         assertThat("Field does not exist: " + fieldPath, response.jsonPath().get(fieldPath), notNullValue());
     }
 
+    @Step("Validate field {fieldPath} does not exist in response")
+    public static void validateFieldNotExists(Response response, String fieldPath) {
+        logger.info("Validating field '{}' does not exist in response", fieldPath);
+        Object fieldValue = response.jsonPath().get(fieldPath);
+        assertThat("Field should not exist: " + fieldPath, fieldValue, nullValue());
+    }
+
     @Step("Validate field {fieldPath} equals {expectedValue}")
     public static void validateFieldValue(Response response, String fieldPath, Object expectedValue) {
         Object actualValue = response.jsonPath().get(fieldPath);

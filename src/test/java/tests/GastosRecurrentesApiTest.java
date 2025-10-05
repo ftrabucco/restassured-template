@@ -29,7 +29,7 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
     private GastosRecurrentesApiClient gastosRecurrentesClient;
 
     @Override
-    protected void customSetup() {
+    protected void customAuthenticatedSetup() {
         gastosRecurrentesClient = new GastosRecurrentesApiClient().withRequestSpec(requestSpec);
     }
 
@@ -59,9 +59,12 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
         // Act
         Response response = gastosRecurrentesClient.createGastoRecurrente(newGastoRecurrente);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.GASTO_RECURRENTE, "data.gastoRecurrente.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
-        
+
         // Debug: Log response structure
         System.out.println("=== GASTOS RECURRENTES CREATE RESPONSE ===");
         System.out.println(response.getBody().asString());
@@ -89,6 +92,9 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
         // Act
         Response response = gastosRecurrentesClient.createGastoRecurrente(gastoRecurrente);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.GASTO_RECURRENTE, "data.gastoRecurrente.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
         ResponseValidator.validateFieldExists(response, "data.gastoRecurrente.id");
@@ -107,6 +113,9 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
         GastoRecurrente newGastoRecurrente = TestDataFactory.createRandomGastoRecurrente();
         Response createResponse = gastosRecurrentesClient.createGastoRecurrente(newGastoRecurrente);
         String gastoRecurrenteId = createResponse.jsonPath().getString("data.gastoRecurrente.id");
+
+        // Track for cleanup
+        trackCreatedGastoRecurrente(gastoRecurrenteId);
 
         // Act
         Response response = gastosRecurrentesClient.getGastoRecurrenteById(gastoRecurrenteId);
@@ -131,6 +140,9 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
         GastoRecurrente updatedGastoRecurrente = TestDataFactory.createGastoRecurrenteWithSpecificAmount(BigDecimal.valueOf(75.00));
         updatedGastoRecurrente.setDescripcion("Gasto recurrente actualizado");
         updatedGastoRecurrente.setActivo(false); // Test deactivation
+
+        // Track for cleanup
+        trackCreatedGastoRecurrente(gastoRecurrenteId);
 
         // Act
         Response response = gastosRecurrentesClient.updateGastoRecurrente(gastoRecurrenteId, updatedGastoRecurrente);
@@ -209,6 +221,9 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
         // Act
         Response response = gastosRecurrentesClient.createGastoRecurrente(gastoRecurrente);
 
+        // Track for cleanup using improved method
+        trackEntityFromResponse(response, EntityType.GASTO_RECURRENTE, "data.gastoRecurrente.id");
+
         // Assert
         ResponseValidator.validateStatusCode(response, 201);
         ResponseValidator.validateFieldExists(response, "data.gastoRecurrente.id");
@@ -225,6 +240,9 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
         gastoRecurrente.setActivo(true);
         Response createResponse = gastosRecurrentesClient.createGastoRecurrente(gastoRecurrente);
         String gastoRecurrenteId = createResponse.jsonPath().getString("data.gastoRecurrente.id");
+
+        // Track for cleanup
+        trackCreatedGastoRecurrente(gastoRecurrenteId);
 
         // Act - Deactivate
         gastoRecurrente.setActivo(false);
@@ -253,5 +271,75 @@ public class GastosRecurrentesApiTest extends ApiTestWithCleanup {
             performCleanup(gastoRecurrenteIds, gastosRecurrentesClient::deleteGastoRecurrente, "gasto recurrente"));
 
         return strategies;
+    }
+
+    // ===============================
+    // SECURITY TESTS - Authentication
+    // ===============================
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when no authentication token provided")
+    @Description("Verify that requests without JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithoutAuthToken() {
+        // Arrange
+        GastosRecurrentesApiClient unauthenticatedClient = new GastosRecurrentesApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        // Act
+        Response response = unauthenticatedClient.getAllGastosRecurrentes();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with invalid authentication token")
+    @Description("Verify that requests with invalid JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithInvalidToken() {
+        // Arrange
+        GastosRecurrentesApiClient invalidTokenClient = new GastosRecurrentesApiClient()
+            .withRequestSpec(getInvalidTokenRequestSpec());
+
+        // Act
+        Response response = invalidTokenClient.getAllGastosRecurrentes();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with malformed authentication token")
+    @Description("Verify that requests with malformed JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithMalformedToken() {
+        // Arrange
+        GastosRecurrentesApiClient malformedTokenClient = new GastosRecurrentesApiClient()
+            .withRequestSpec(getMalformedTokenRequestSpec());
+
+        // Act
+        Response response = malformedTokenClient.getAllGastosRecurrentes();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when creating gasto recurrente without authentication")
+    @Description("Verify that creation operations require authentication")
+    void shouldReturn401WhenCreatingWithoutAuth() {
+        // Arrange
+        GastosRecurrentesApiClient unauthenticatedClient = new GastosRecurrentesApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        GastoRecurrente newGastoRecurrente = TestDataFactory.createRandomGastoRecurrente();
+
+        // Act
+        Response response = unauthenticatedClient.createGastoRecurrente(newGastoRecurrente);
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
     }
 }

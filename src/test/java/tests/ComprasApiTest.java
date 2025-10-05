@@ -29,7 +29,7 @@ public class ComprasApiTest extends ApiTestWithCleanup {
     private ComprasApiClient comprasClient;
 
     @Override
-    protected void customSetup() {
+    protected void customAuthenticatedSetup() {
         comprasClient = new ComprasApiClient().withRequestSpec(requestSpec);
     }
 
@@ -178,6 +178,76 @@ public class ComprasApiTest extends ApiTestWithCleanup {
         ResponseValidator.validateStatusCode(response, 201);
         ResponseValidator.validateFieldExists(response, "data.compra.id");
         ResponseValidator.validateNumericFieldValue(response, "data.compra.categoria_gasto_id", categoriaGastoId);
+    }
+
+    // ===============================
+    // SECURITY TESTS - Authentication
+    // ===============================
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when no authentication token provided")
+    @Description("Verify that requests without JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithoutAuthToken() {
+        // Arrange
+        ComprasApiClient unauthenticatedClient = new ComprasApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        // Act
+        Response response = unauthenticatedClient.getAllCompras();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with invalid authentication token")
+    @Description("Verify that requests with invalid JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithInvalidToken() {
+        // Arrange
+        ComprasApiClient invalidTokenClient = new ComprasApiClient()
+            .withRequestSpec(getInvalidTokenRequestSpec());
+
+        // Act
+        Response response = invalidTokenClient.getAllCompras();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 with malformed authentication token")
+    @Description("Verify that requests with malformed JWT token are rejected with 401 Unauthorized")
+    void shouldReturn401WithMalformedToken() {
+        // Arrange
+        ComprasApiClient malformedTokenClient = new ComprasApiClient()
+            .withRequestSpec(getMalformedTokenRequestSpec());
+
+        // Act
+        Response response = malformedTokenClient.getAllCompras();
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
+    }
+
+    @Test
+    @Story("Security Testing")
+    @DisplayName("Should return 401 when creating compra without authentication")
+    @Description("Verify that creation operations require authentication")
+    void shouldReturn401WhenCreatingWithoutAuth() {
+        // Arrange
+        ComprasApiClient unauthenticatedClient = new ComprasApiClient()
+            .withRequestSpec(getUnauthenticatedRequestSpec());
+
+        Compra newCompra = TestDataFactory.createRandomCompra();
+
+        // Act
+        Response response = unauthenticatedClient.createCompra(newCompra);
+
+        // Assert
+        ResponseValidator.validateStatusCode(response, 401);
     }
 
     // Cleanup implementation using Strategy Pattern (SOLID principles)

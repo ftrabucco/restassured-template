@@ -520,6 +520,253 @@ public class McpServerConnector {
                     ]
                 }
                 """;
+                case "get_tarjetas_info" -> """
+                {
+                    "tarjetas_endpoints": {
+                        "base_endpoints": [
+                            {
+                                "path": "/api/tarjetas",
+                                "methods": ["GET", "POST", "PUT", "DELETE"],
+                                "description": "Gestión general de tarjetas de crédito y débito"
+                            },
+                            {
+                                "path": "/api/tarjetas-credito",
+                                "methods": ["GET", "POST", "PUT", "DELETE"],
+                                "description": "Gestión específica de tarjetas de crédito"
+                            },
+                            {
+                                "path": "/api/tarjetas-debito",
+                                "methods": ["GET", "POST", "PUT", "DELETE"],
+                                "description": "Gestión específica de tarjetas de débito"
+                            },
+                            {
+                                "path": "/api/tarjetas/:id",
+                                "methods": ["GET", "PUT", "DELETE"],
+                                "description": "Operaciones sobre tarjeta específica"
+                            },
+                            {
+                                "path": "/api/tarjetas/:id/transacciones",
+                                "methods": ["GET"],
+                                "description": "Obtener transacciones de una tarjeta específica"
+                            },
+                            {
+                                "path": "/api/tarjetas/:id/balance",
+                                "methods": ["GET"],
+                                "description": "Obtener balance actual de la tarjeta"
+                            },
+                            {
+                                "path": "/api/tarjetas/:id/limite",
+                                "methods": ["GET", "PUT"],
+                                "description": "Gestionar límite de crédito de la tarjeta"
+                            },
+                            {
+                                "path": "/api/tarjetas/search",
+                                "methods": ["GET"],
+                                "description": "Buscar tarjetas por criterios específicos"
+                            }
+                        ],
+                        "card_types": {
+                            "credito": {
+                                "properties": [
+                                    "numero_tarjeta", "nombre_titular", "fecha_vencimiento",
+                                    "codigo_seguridad", "banco_emisor", "tipo_tarjeta",
+                                    "limite_credito", "credito_disponible", "fecha_corte",
+                                    "fecha_vencimiento_pago", "tasa_interes", "estado"
+                                ],
+                                "business_rules": {
+                                    "limite_credito": {"min": 1000, "max": 10000000},
+                                    "tasa_interes": {"min": 0.0, "max": 99.99},
+                                    "credito_disponible": "calculated_field"
+                                }
+                            },
+                            "debito": {
+                                "properties": [
+                                    "numero_tarjeta", "nombre_titular", "fecha_vencimiento",
+                                    "codigo_seguridad", "banco_emisor", "tipo_tarjeta",
+                                    "cuenta_asociada", "saldo_disponible", "limite_diario",
+                                    "estado"
+                                ],
+                                "business_rules": {
+                                    "limite_diario": {"min": 100, "max": 100000},
+                                    "saldo_disponible": "linked_to_account"
+                                }
+                            }
+                        },
+                        "request_schemas": {
+                            "create_tarjeta_credito": {
+                                "required": ["numero_tarjeta", "nombre_titular", "fecha_vencimiento", "banco_emisor", "limite_credito"],
+                                "optional": ["codigo_seguridad", "tasa_interes", "fecha_corte", "fecha_vencimiento_pago"],
+                                "properties": {
+                                    "numero_tarjeta": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{16}$",
+                                        "description": "Número de tarjeta de 16 dígitos"
+                                    },
+                                    "nombre_titular": {
+                                        "type": "string",
+                                        "minLength": 2,
+                                        "maxLength": 100,
+                                        "description": "Nombre completo del titular"
+                                    },
+                                    "fecha_vencimiento": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{2}/[0-9]{2}$",
+                                        "description": "Fecha de vencimiento MM/YY"
+                                    },
+                                    "codigo_seguridad": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{3,4}$",
+                                        "description": "Código CVV/CVC de 3 o 4 dígitos"
+                                    },
+                                    "banco_emisor": {
+                                        "type": "string",
+                                        "minLength": 2,
+                                        "maxLength": 50,
+                                        "description": "Nombre del banco emisor"
+                                    },
+                                    "limite_credito": {
+                                        "type": "number",
+                                        "minimum": 1000,
+                                        "maximum": 10000000,
+                                        "description": "Límite de crédito en pesos"
+                                    },
+                                    "tasa_interes": {
+                                        "type": "number",
+                                        "minimum": 0.0,
+                                        "maximum": 99.99,
+                                        "description": "Tasa de interés anual"
+                                    }
+                                }
+                            },
+                            "create_tarjeta_debito": {
+                                "required": ["numero_tarjeta", "nombre_titular", "fecha_vencimiento", "banco_emisor", "cuenta_asociada"],
+                                "optional": ["codigo_seguridad", "limite_diario"],
+                                "properties": {
+                                    "numero_tarjeta": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{16}$",
+                                        "description": "Número de tarjeta de 16 dígitos"
+                                    },
+                                    "nombre_titular": {
+                                        "type": "string",
+                                        "minLength": 2,
+                                        "maxLength": 100,
+                                        "description": "Nombre completo del titular"
+                                    },
+                                    "fecha_vencimiento": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{2}/[0-9]{2}$",
+                                        "description": "Fecha de vencimiento MM/YY"
+                                    },
+                                    "cuenta_asociada": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{10,20}$",
+                                        "description": "Número de cuenta bancaria asociada"
+                                    },
+                                    "limite_diario": {
+                                        "type": "number",
+                                        "minimum": 100,
+                                        "maximum": 100000,
+                                        "description": "Límite diario de extracción/compra"
+                                    }
+                                }
+                            }
+                        },
+                        "response_schemas": {
+                            "tarjeta_credito_response": {
+                                "id": "integer",
+                                "numero_tarjeta": "string (masked)",
+                                "nombre_titular": "string",
+                                "fecha_vencimiento": "string",
+                                "banco_emisor": "string",
+                                "tipo_tarjeta": "CREDITO",
+                                "limite_credito": "number",
+                                "credito_disponible": "number",
+                                "fecha_corte": "string",
+                                "fecha_vencimiento_pago": "string",
+                                "tasa_interes": "number",
+                                "estado": "string",
+                                "fecha_creacion": "string",
+                                "fecha_actualizacion": "string",
+                                "usuario_id": "integer"
+                            },
+                            "tarjeta_debito_response": {
+                                "id": "integer",
+                                "numero_tarjeta": "string (masked)",
+                                "nombre_titular": "string",
+                                "fecha_vencimiento": "string",
+                                "banco_emisor": "string",
+                                "tipo_tarjeta": "DEBITO",
+                                "cuenta_asociada": "string (masked)",
+                                "saldo_disponible": "number",
+                                "limite_diario": "number",
+                                "estado": "string",
+                                "fecha_creacion": "string",
+                                "fecha_actualizacion": "string",
+                                "usuario_id": "integer"
+                            }
+                        },
+                        "relationships": {
+                            "with_gastos": {
+                                "description": "Las tarjetas pueden ser utilizadas como método de pago en gastos",
+                                "foreign_key": "tarjeta_id in gastos table"
+                            },
+                            "with_compras": {
+                                "description": "Las tarjetas pueden ser utilizadas para realizar compras",
+                                "foreign_key": "tarjeta_id in compras table"
+                            },
+                            "with_debitos_automaticos": {
+                                "description": "Las tarjetas pueden tener débitos automáticos asociados",
+                                "foreign_key": "tarjeta_id in debitos_automaticos table"
+                            },
+                            "with_transacciones": {
+                                "description": "Todas las operaciones con tarjetas generan transacciones",
+                                "table": "transacciones_tarjetas"
+                            }
+                        },
+                        "business_rules": {
+                            "numero_tarjeta": {
+                                "validation": "Luhn algorithm",
+                                "masking": "Show only last 4 digits",
+                                "uniqueness": "Must be unique across all cards"
+                            },
+                            "credito_disponible": {
+                                "calculation": "limite_credito - saldo_utilizado",
+                                "real_time": true
+                            },
+                            "estado_tarjeta": {
+                                "values": ["ACTIVA", "BLOQUEADA", "VENCIDA", "CANCELADA"],
+                                "default": "ACTIVA"
+                            },
+                            "fecha_vencimiento": {
+                                "validation": "Must be future date",
+                                "format": "MM/YY"
+                            },
+                            "security": {
+                                "codigo_seguridad": "Never return in responses",
+                                "numero_completo": "Mask in responses",
+                                "encryption": "Store encrypted in database"
+                            }
+                        },
+                        "validation_rules": {
+                            "create_validation": [
+                                "Validate card number with Luhn algorithm",
+                                "Check expiration date is in future",
+                                "Verify bank exists in system",
+                                "Ensure card number is unique",
+                                "Validate holder name format"
+                            ],
+                            "update_validation": [
+                                "Only owner can update card",
+                                "Cannot update card number",
+                                "Cannot update holder name",
+                                "Can update limits and dates",
+                                "State changes follow workflow"
+                            ]
+                        }
+                    }
+                }
+                """;
                 default -> "{}";
             };
             
@@ -587,18 +834,29 @@ public class McpServerConnector {
     }
     
     /**
+     * Get detailed information about tarjetas (cards) endpoints from MCP server
+     */
+    @Step("Get tarjetas endpoints information from MCP server")
+    public JsonNode getTarjetasInfo() {
+        logger.info("Getting tarjetas endpoints information from MCP server");
+        JsonNode result = executeMcpCommand("get_tarjetas_info", null);
+        AllureLogger.addJsonAttachment("Tarjetas Endpoints Info", result.toString());
+        return result;
+    }
+
+    /**
      * Validate if current server configuration matches expected business rules
      */
     @Step("Validate business rules compliance")
     public boolean validateBusinessRules(String entity, Object data) {
         JsonNode businessRules = getBusinessRules();
         JsonNode entityRules = businessRules.get(entity);
-        
+
         if (entityRules == null) {
             logger.warn("No business rules found for entity: {}", entity);
             return true;
         }
-        
+
         // Add validation logic here based on your business rules
         logger.info("Validating business rules for entity: {}", entity);
         return true;

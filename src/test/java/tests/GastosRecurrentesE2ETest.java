@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.GastosRecurrentesApiClient;
 import clients.GastosUnicosApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,7 +14,12 @@ import utils.TestDataFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
+import static base.ApiTestWithCleanup.EntityType;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -24,24 +29,28 @@ import static org.junit.jupiter.api.Assertions.*;
 @Feature("Gastos Recurrentes E2E with Real Generation")
 @DisplayName("Gastos Recurrentes End-to-End Tests with Real Generation")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class GastosRecurrentesE2ETest extends BaseTest {
+public class GastosRecurrentesE2ETest extends ApiTestWithCleanup {
 
-    private static GastosRecurrentesApiClient gastosRecurrentesClient;
-    private static GastosUnicosApiClient gastosUnicosClient;
+    private GastosRecurrentesApiClient gastosRecurrentesClient;
+    private GastosUnicosApiClient gastosUnicosClient;
     private static McpServerConnector mcpConnector;
     private static JsonNode businessRules;
-    
+
     // Shared test data
     private static GastoRecurrente createdGastoRecurrente;
     private static String createdGastoRecurrenteId;
     private static int initialGastosUnicosCount;
-    
+
     @BeforeAll
     public static void setUpE2ETest() {
-        gastosRecurrentesClient = new GastosRecurrentesApiClient();
-        gastosUnicosClient = new GastosUnicosApiClient();
         mcpConnector = McpServerConnector.getInstance();
         businessRules = mcpConnector.getBusinessRules();
+    }
+
+    @Override
+    protected void customAuthenticatedSetup() {
+        gastosRecurrentesClient = new GastosRecurrentesApiClient().withRequestSpec(requestSpec);
+        gastosUnicosClient = new GastosUnicosApiClient().withRequestSpec(requestSpec);
     }
 
 
@@ -464,18 +473,25 @@ public class GastosRecurrentesE2ETest extends BaseTest {
 
     @AfterAll
     static void teardownE2ETest() {
-        // Final cleanup in case tests failed before reaching DELETE step
-        if (createdGastoRecurrenteId != null) {
-            try {
-                Response cleanupResponse = gastosRecurrentesClient.getGastoRecurrenteById(createdGastoRecurrenteId);
-                if (cleanupResponse.getStatusCode() == 200) {
-                    System.out.println("🧹 Final cleanup - deleting orphaned gasto recurrente: " + createdGastoRecurrenteId);
-                    gastosRecurrentesClient.deleteGastoRecurrente(createdGastoRecurrenteId);
-                }
-            } catch (Exception e) {
-                System.out.println("⚠️ Final cleanup attempt failed: " + e.getMessage());
-            }
-        }
+        // Final cleanup is now handled by ApiTestWithCleanup automatically
+        // Static variables for tracking are cleared here
+        createdGastoRecurrenteId = null;
+        createdGastoRecurrente = null;
+        initialGastosUnicosCount = 0;
+
         System.out.println("🏁 Gastos Recurrentes E2E Test Suite completed");
+    }
+
+    // Cleanup implementation for ApiTestWithCleanup
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        Map<EntityType, Function<List<String>, Integer>> strategies = new HashMap<>();
+
+        // E2E tests handle their own cleanup in test steps
+        // This is mainly for safety in case of test failures
+        strategies.put(EntityType.GASTO_RECURRENTE, gastoRecurrenteIds ->
+            performCleanup(gastoRecurrenteIds, gastosRecurrentesClient::deleteGastoRecurrente, "gasto recurrente"));
+
+        return strategies;
     }
 }

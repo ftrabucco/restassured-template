@@ -33,8 +33,8 @@ public abstract class BaseTest {
         logger.info("Running tests against environment: {}", config.getCurrentEnvironment());
         logger.info("Base URL: {}", config.getBaseUrl());
         
-        // Global RestAssured configuration
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+        // Global RestAssured configuration - disable problematic logging
+        // RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
         
         // Enable detailed logging for debugging
         if (logger.isDebugEnabled()) {
@@ -61,12 +61,10 @@ public abstract class BaseTest {
                 .setBaseUri(config.getBaseUrl())
                 .setContentType(ContentType.JSON)
                 .setAccept(ContentType.JSON)
-                .log(LogDetail.ALL)
                 .build();
 
         // Build response specification for common validations
         responseSpec = new ResponseSpecBuilder()
-                .log(LogDetail.ALL)
                 .build();
                 
         // Custom setup for each test class

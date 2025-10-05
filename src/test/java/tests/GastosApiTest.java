@@ -1,6 +1,6 @@
 package tests;
 
-import base.BaseTest;
+import base.ApiTestWithCleanup;
 import clients.GastosApiClient;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -10,16 +10,23 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import utils.ResponseValidator;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import static base.ApiTestWithCleanup.EntityType;
+
 /**
  * Test class for Gastos (Expenses) API endpoints
  * Demonstrates the framework usage with real test scenarios
  */
 @Feature("Gastos API")
-public class GastosApiTest extends BaseTest {
+public class GastosApiTest extends ApiTestWithCleanup {
     private GastosApiClient gastosClient;
 
     @Override
-    protected void customSetup() {
+    protected void customAuthenticatedSetup() {
         gastosClient = new GastosApiClient().withRequestSpec(requestSpec);
     }
 
@@ -87,5 +94,11 @@ public class GastosApiTest extends BaseTest {
         ResponseValidator.validateStatusCode(response, 200);
         ResponseValidator.validateContentType(response, "application/json");
         ResponseValidator.validateResponseTime(response, 3000);
+    }
+
+    // Cleanup implementation - this test class only reads data, no cleanup needed
+    @Override
+    protected Map<EntityType, Function<List<String>, Integer>> getCleanupStrategies() {
+        return new HashMap<>(); // No entities created, no cleanup needed
     }
 }
