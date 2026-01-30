@@ -9,6 +9,7 @@ import io.qameta.allure.Story;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Disabled;
 import utils.McpServerConnector;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Feature("MCP Server Integration - Consolidated")
 @DisplayName("Complete MCP Server Integration Tests")
+@Disabled("Requires MCP server running - enable manually when needed")
 public class McpConsolidatedTest extends BaseTest {
 
     private static McpServerConnector mcpConnector;

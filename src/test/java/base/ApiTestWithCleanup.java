@@ -33,6 +33,7 @@ public abstract class ApiTestWithCleanup extends BaseTest {
         GASTO_RECURRENTE("gasto recurrente"),
         DEBITO_AUTOMATICO("débito automático"),
         TARJETA("tarjeta"),
+        TIPO_CAMBIO("tipo de cambio"),
         USER("user");
 
         private final String displayName;

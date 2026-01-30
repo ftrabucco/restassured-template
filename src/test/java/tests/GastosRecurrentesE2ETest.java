@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Feature("Gastos Recurrentes E2E with Real Generation")
 @DisplayName("Gastos Recurrentes End-to-End Tests with Real Generation")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled("Requires MCP server running - enable manually when needed")
 public class GastosRecurrentesE2ETest extends ApiTestWithCleanup {
 
     private GastosRecurrentesApiClient gastosRecurrentesClient;

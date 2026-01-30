@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.qameta.allure.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import utils.McpServerConnector;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @Epic("Finance App API - Tarjetas Management")
 @Feature("MCP Server Integration - Tarjetas Endpoint Information")
+@Disabled("Requires MCP server running - enable manually when needed")
 public class TarjetasEndpointInfoTest extends BaseTest {
 
     @Test

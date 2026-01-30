@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Feature("Débitos Automáticos E2E with Real Processing")
 @DisplayName("Débitos Automáticos End-to-End Tests with Real Processing")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled("Requires MCP server running - enable manually when needed")
 public class DebitosAutomaticosE2ETest extends ApiTestWithCleanup {
 
     private DebitosAutomaticosApiClient debitosAutomaticosClient;

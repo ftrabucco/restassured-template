@@ -236,4 +236,128 @@ public class TarjetasApiTest extends ApiTestWithCleanup {
         response.then()
                 .body("success", equalTo(false));
     }
+
+    // ========== NEW ENDPOINTS TESTS (MCP UPDATES) ==========
+
+    @Test
+    void shouldGetTarjetasStats() {
+        // Create some cards first to have stats
+        Tarjeta creditCard = TestDataFactory.createValidCreditCard();
+        Tarjeta debitCard = TestDataFactory.createValidDebitCard();
+
+        Response creditResponse = tarjetasClient.createTarjeta(creditCard);
+        Response debitResponse = tarjetasClient.createTarjeta(debitCard);
+
+        trackCreatedTarjeta(creditResponse.jsonPath().getString("data.id"));
+        trackCreatedTarjeta(debitResponse.jsonPath().getString("data.id"));
+
+        // Get stats
+        Response response = tarjetasClient.getTarjetasStats();
+        ResponseValidator.validateStatusCode(response, 200);
+
+        response.then()
+                .body("success", equalTo(true))
+                .body("data.estadisticas", notNullValue())
+                .body("data.estadisticas.total", greaterThanOrEqualTo(2))
+                .body("data.estadisticas.credito", greaterThanOrEqualTo(1))
+                .body("data.estadisticas.debito", greaterThanOrEqualTo(1))
+                .body("data.usuario_id", notNullValue());
+    }
+
+    @Test
+    void shouldGetTarjetaUsageWhenNotInUse() {
+        // Create a card that's not used anywhere
+        Tarjeta tarjeta = TestDataFactory.createValidCreditCard();
+        Response createResponse = tarjetasClient.createTarjeta(tarjeta);
+        String tarjetaId = createResponse.jsonPath().getString("data.id");
+        trackCreatedTarjeta(tarjetaId);
+
+        // Check usage
+        Response response = tarjetasClient.getTarjetaUsage(tarjetaId);
+        ResponseValidator.validateStatusCode(response, 200);
+
+        response.then()
+                .body("success", equalTo(true))
+                .body("data.tarjeta.id", equalTo(Integer.valueOf(tarjetaId)))
+                .body("data.inUse", equalTo(false))
+                .body("data.usage.gastos", equalTo(0))
+                .body("data.usage.compras", equalTo(0))
+                .body("data.usage.total", equalTo(0));
+    }
+
+    @Test
+    void shouldGetTarjetaUsageFor404() {
+        Response response = tarjetasClient.getTarjetaUsage("999999");
+        ResponseValidator.validateStatusCode(response, 404);
+        response.then()
+                .body("success", equalTo(false));
+    }
+
+    @Test
+    void shouldValidateCreditCardRequiresDateFields() {
+        // Credit card without dia_mes_cierre and dia_mes_vencimiento should fail
+        Map<String, Object> invalidCreditCard = new HashMap<>();
+        invalidCreditCard.put("nombre", "Tarjeta Crédito Sin Fechas");
+        invalidCreditCard.put("tipo", "credito");
+        invalidCreditCard.put("banco", "Banco Test");
+        invalidCreditCard.put("usuario_id", 1);
+
+        Response response = tarjetasClient.createCardWithMissingFields(invalidCreditCard);
+        ResponseValidator.validateStatusCode(response, 400);
+
+        response.then()
+                .body("success", equalTo(false));
+    }
+
+    @Test
+    void shouldValidateDebitCardCannotHaveDateFields() {
+        // Debit card with dia_mes_cierre and dia_mes_vencimiento should fail
+        Map<String, Object> invalidDebitCard = new HashMap<>();
+        invalidDebitCard.put("nombre", "Tarjeta Débito Con Fechas");
+        invalidDebitCard.put("tipo", "debito");
+        invalidDebitCard.put("banco", "Banco Test");
+        invalidDebitCard.put("dia_mes_cierre", 15);
+        invalidDebitCard.put("dia_mes_vencimiento", 25);
+        invalidDebitCard.put("usuario_id", 1);
+
+        Response response = tarjetasClient.createTarjetaWithInvalidData(invalidDebitCard);
+        ResponseValidator.validateStatusCode(response, 400);
+
+        response.then()
+                .body("success", equalTo(false));
+    }
+
+    @Test
+    void shouldNormalizeCreditCardData() {
+        // Credit card should set permite_cuotas = true automatically
+        Tarjeta creditCard = TestDataFactory.createValidCreditCard();
+
+        Response response = tarjetasClient.createTarjeta(creditCard);
+        ResponseValidator.validateStatusCode(response, 201);
+
+        trackCreatedTarjeta(response.jsonPath().getString("data.id"));
+
+        response.then()
+                .body("data.tipo", equalTo("credito"))
+                .body("data.permite_cuotas", equalTo(true))
+                .body("data.dia_mes_cierre", notNullValue())
+                .body("data.dia_mes_vencimiento", notNullValue());
+    }
+
+    @Test
+    void shouldNormalizeDebitCardData() {
+        // Debit card should set permite_cuotas = false and dates to null automatically
+        Tarjeta debitCard = TestDataFactory.createValidDebitCard();
+
+        Response response = tarjetasClient.createTarjeta(debitCard);
+        ResponseValidator.validateStatusCode(response, 201);
+
+        trackCreatedTarjeta(response.jsonPath().getString("data.id"));
+
+        response.then()
+                .body("data.tipo", equalTo("debito"))
+                .body("data.permite_cuotas", equalTo(false))
+                .body("data.dia_mes_cierre", nullValue())
+                .body("data.dia_mes_vencimiento", nullValue());
+    }
 }

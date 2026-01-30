@@ -2,6 +2,7 @@ package models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
  * Model class for Compra (Purchase) entity
  * Demonstrates Builder pattern implementation
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Compra {
     @JsonIgnore
     private String id;
@@ -42,6 +44,19 @@ public class Compra {
     @JsonIgnore
     private Boolean pendienteCuotas;
 
+    // Multi-currency fields
+    @JsonProperty("moneda_origen")
+    private String monedaOrigen;
+
+    @JsonProperty(value = "monto_total_ars", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal montoTotalArs;
+
+    @JsonProperty(value = "monto_total_usd", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal montoTotalUsd;
+
+    @JsonProperty(value = "tipo_cambio_usado", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal tipoCambioUsado;
+
     // Default constructor
     public Compra() {}
 
@@ -57,6 +72,10 @@ public class Compra {
         this.tipoPagoId = builder.tipoPagoId;
         this.tarjetaId = builder.tarjetaId;
         this.pendienteCuotas = builder.pendienteCuotas;
+        this.monedaOrigen = builder.monedaOrigen;
+        this.montoTotalArs = builder.montoTotalArs;
+        this.montoTotalUsd = builder.montoTotalUsd;
+        this.tipoCambioUsado = builder.tipoCambioUsado;
     }
 
     // Getters
@@ -70,6 +89,10 @@ public class Compra {
     public Long getTipoPagoId() { return tipoPagoId; }
     public Long getTarjetaId() { return tarjetaId; }
     public Boolean getPendienteCuotas() { return pendienteCuotas; }
+    public String getMonedaOrigen() { return monedaOrigen; }
+    public BigDecimal getMontoTotalArs() { return montoTotalArs; }
+    public BigDecimal getMontoTotalUsd() { return montoTotalUsd; }
+    public BigDecimal getTipoCambioUsado() { return tipoCambioUsado; }
 
     // Setters
     public void setId(String id) { this.id = id; }
@@ -82,6 +105,10 @@ public class Compra {
     public void setTipoPagoId(Long tipoPagoId) { this.tipoPagoId = tipoPagoId; }
     public void setTarjetaId(Long tarjetaId) { this.tarjetaId = tarjetaId; }
     public void setPendienteCuotas(Boolean pendienteCuotas) { this.pendienteCuotas = pendienteCuotas; }
+    public void setMonedaOrigen(String monedaOrigen) { this.monedaOrigen = monedaOrigen; }
+    public void setMontoTotalArs(BigDecimal montoTotalArs) { this.montoTotalArs = montoTotalArs; }
+    public void setMontoTotalUsd(BigDecimal montoTotalUsd) { this.montoTotalUsd = montoTotalUsd; }
+    public void setTipoCambioUsado(BigDecimal tipoCambioUsado) { this.tipoCambioUsado = tipoCambioUsado; }
 
     // Builder pattern implementation
     public static class Builder {
@@ -104,6 +131,10 @@ public class Compra {
         private Long tarjetaId;
         @JsonProperty("pendiente_cuotas")
         private Boolean pendienteCuotas;
+        private String monedaOrigen;
+        private BigDecimal montoTotalArs;
+        private BigDecimal montoTotalUsd;
+        private BigDecimal tipoCambioUsado;
 
         public Builder id(String id) {
             this.id = id;
@@ -155,6 +186,26 @@ public class Compra {
             return this;
         }
 
+        public Builder monedaOrigen(String monedaOrigen) {
+            this.monedaOrigen = monedaOrigen;
+            return this;
+        }
+
+        public Builder montoTotalArs(BigDecimal montoTotalArs) {
+            this.montoTotalArs = montoTotalArs;
+            return this;
+        }
+
+        public Builder montoTotalUsd(BigDecimal montoTotalUsd) {
+            this.montoTotalUsd = montoTotalUsd;
+            return this;
+        }
+
+        public Builder tipoCambioUsado(BigDecimal tipoCambioUsado) {
+            this.tipoCambioUsado = tipoCambioUsado;
+            return this;
+        }
+
         public Compra build() {
             return new Compra(this);
         }
@@ -173,6 +224,10 @@ public class Compra {
                 ", tipoPagoId=" + tipoPagoId +
                 ", tarjetaId=" + tarjetaId +
                 ", pendienteCuotas=" + pendienteCuotas +
+                ", monedaOrigen='" + monedaOrigen + '\'' +
+                ", montoTotalArs=" + montoTotalArs +
+                ", montoTotalUsd=" + montoTotalUsd +
+                ", tipoCambioUsado=" + tipoCambioUsado +
                 '}';
     }
 }

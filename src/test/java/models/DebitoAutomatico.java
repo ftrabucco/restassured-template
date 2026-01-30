@@ -1,6 +1,7 @@
 package models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
  * Model class representing a Débito Automático (Automatic Debit) entity
  * Used for automatic recurring payments and debits
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DebitoAutomatico {
     @JsonIgnore
     private Long id;
@@ -38,10 +40,23 @@ public class DebitoAutomatico {
     private Long tarjetaId;
     
     private Boolean activo;
-    
+
     @JsonIgnore
     @JsonProperty("ultima_fecha_generado")
     private String ultimaFechaGenerado;
+
+    // Multi-currency fields
+    @JsonProperty("moneda_origen")
+    private String monedaOrigen;
+
+    @JsonProperty(value = "monto_ars", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal montoArs;
+
+    @JsonProperty(value = "monto_usd", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal montoUsd;
+
+    @JsonProperty(value = "tipo_cambio_referencia", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal tipoCambioReferencia;
     
     @JsonIgnore
     @JsonProperty("createdAt")
@@ -104,6 +119,15 @@ public class DebitoAutomatico {
     
     public String getUltimaFechaGenerado() { return ultimaFechaGenerado; }
     public void setUltimaFechaGenerado(String ultimaFechaGenerado) { this.ultimaFechaGenerado = ultimaFechaGenerado; }
+
+    public String getMonedaOrigen() { return monedaOrigen; }
+    public void setMonedaOrigen(String monedaOrigen) { this.monedaOrigen = monedaOrigen; }
+    public BigDecimal getMontoArs() { return montoArs; }
+    public void setMontoArs(BigDecimal montoArs) { this.montoArs = montoArs; }
+    public BigDecimal getMontoUsd() { return montoUsd; }
+    public void setMontoUsd(BigDecimal montoUsd) { this.montoUsd = montoUsd; }
+    public BigDecimal getTipoCambioReferencia() { return tipoCambioReferencia; }
+    public void setTipoCambioReferencia(BigDecimal tipoCambioReferencia) { this.tipoCambioReferencia = tipoCambioReferencia; }
     
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
@@ -124,6 +148,10 @@ public class DebitoAutomatico {
                 ", tipoPagoId=" + tipoPagoId +
                 ", tarjetaId=" + tarjetaId +
                 ", activo=" + activo +
+                ", monedaOrigen='" + monedaOrigen + '\'' +
+                ", montoArs=" + montoArs +
+                ", montoUsd=" + montoUsd +
+                ", tipoCambioReferencia=" + tipoCambioReferencia +
                 '}';
     }
     
@@ -181,7 +209,12 @@ public class DebitoAutomatico {
             this.debitoAutomatico.setActivo(activo);
             return this;
         }
-        
+
+        public Builder monedaOrigen(String monedaOrigen) {
+            this.debitoAutomatico.setMonedaOrigen(monedaOrigen);
+            return this;
+        }
+
         public DebitoAutomatico build() {
             return this.debitoAutomatico;
         }

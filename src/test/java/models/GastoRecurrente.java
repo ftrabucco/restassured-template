@@ -1,6 +1,7 @@
 package models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
  * Model class for GastoRecurrente (Recurring Expense) entity
  * Demonstrates Builder pattern implementation
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class GastoRecurrente {
     @JsonIgnore
     private Long id;
@@ -43,9 +45,22 @@ public class GastoRecurrente {
     
     @JsonProperty("activo")
     private Boolean activo;
-    
+
     @JsonIgnore
     private LocalDate ultimaFechaGenerado;
+
+    // Multi-currency fields
+    @JsonProperty("moneda_origen")
+    private String monedaOrigen;
+
+    @JsonProperty(value = "monto_ars", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal montoArs;
+
+    @JsonProperty(value = "monto_usd", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal montoUsd;
+
+    @JsonProperty(value = "tipo_cambio_referencia", access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal tipoCambioReferencia;
 
     // Default constructor
     public GastoRecurrente() {}
@@ -64,6 +79,10 @@ public class GastoRecurrente {
         this.tarjetaId = builder.tarjetaId;
         this.activo = builder.activo;
         this.ultimaFechaGenerado = builder.ultimaFechaGenerado;
+        this.monedaOrigen = builder.monedaOrigen;
+        this.montoArs = builder.montoArs;
+        this.montoUsd = builder.montoUsd;
+        this.tipoCambioReferencia = builder.tipoCambioReferencia;
     }
 
     // Getters
@@ -79,6 +98,10 @@ public class GastoRecurrente {
     public Long getTarjetaId() { return tarjetaId; }
     public Boolean getActivo() { return activo; }
     public LocalDate getUltimaFechaGenerado() { return ultimaFechaGenerado; }
+    public String getMonedaOrigen() { return monedaOrigen; }
+    public BigDecimal getMontoArs() { return montoArs; }
+    public BigDecimal getMontoUsd() { return montoUsd; }
+    public BigDecimal getTipoCambioReferencia() { return tipoCambioReferencia; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -93,6 +116,10 @@ public class GastoRecurrente {
     public void setTarjetaId(Long tarjetaId) { this.tarjetaId = tarjetaId; }
     public void setActivo(Boolean activo) { this.activo = activo; }
     public void setUltimaFechaGenerado(LocalDate ultimaFechaGenerado) { this.ultimaFechaGenerado = ultimaFechaGenerado; }
+    public void setMonedaOrigen(String monedaOrigen) { this.monedaOrigen = monedaOrigen; }
+    public void setMontoArs(BigDecimal montoArs) { this.montoArs = montoArs; }
+    public void setMontoUsd(BigDecimal montoUsd) { this.montoUsd = montoUsd; }
+    public void setTipoCambioReferencia(BigDecimal tipoCambioReferencia) { this.tipoCambioReferencia = tipoCambioReferencia; }
 
     // Builder pattern implementation
     public static class Builder {
@@ -108,6 +135,10 @@ public class GastoRecurrente {
         private Long tarjetaId;
         private Boolean activo;
         private LocalDate ultimaFechaGenerado;
+        private String monedaOrigen;
+        private BigDecimal montoArs;
+        private BigDecimal montoUsd;
+        private BigDecimal tipoCambioReferencia;
 
         public Builder id(Long id) {
             this.id = id;
@@ -169,6 +200,26 @@ public class GastoRecurrente {
             return this;
         }
 
+        public Builder monedaOrigen(String monedaOrigen) {
+            this.monedaOrigen = monedaOrigen;
+            return this;
+        }
+
+        public Builder montoArs(BigDecimal montoArs) {
+            this.montoArs = montoArs;
+            return this;
+        }
+
+        public Builder montoUsd(BigDecimal montoUsd) {
+            this.montoUsd = montoUsd;
+            return this;
+        }
+
+        public Builder tipoCambioReferencia(BigDecimal tipoCambioReferencia) {
+            this.tipoCambioReferencia = tipoCambioReferencia;
+            return this;
+        }
+
         public GastoRecurrente build() {
             return new GastoRecurrente(this);
         }
@@ -189,6 +240,10 @@ public class GastoRecurrente {
                 ", tarjetaId=" + tarjetaId +
                 ", activo=" + activo +
                 ", ultimaFechaGenerado=" + ultimaFechaGenerado +
+                ", monedaOrigen='" + monedaOrigen + '\'' +
+                ", montoArs=" + montoArs +
+                ", montoUsd=" + montoUsd +
+                ", tipoCambioReferencia=" + tipoCambioReferencia +
                 '}';
     }
 }

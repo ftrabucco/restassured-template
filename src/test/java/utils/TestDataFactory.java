@@ -8,6 +8,7 @@ import models.Compra;
 import models.GastoRecurrente;
 import models.DebitoAutomatico;
 import models.Tarjeta;
+import models.TipoCambio;
 import models.User;
 
 import java.math.BigDecimal;
@@ -108,6 +109,7 @@ public class TestDataFactory {
         return new GastoUnico.Builder()
                 .descripcion(faker.commerce().productName())
                 .monto(BigDecimal.valueOf(faker.number().randomDouble(2, 50, 2000)))
+                .monedaOrigen("ARS") // Default currency
                 .fecha(LocalDate.now().minusDays(faker.number().numberBetween(0, 30)))
                 .categoriaGastoId(getRandomCategoriaGastoId())
                 .importanciaGastoId(getRandomImportanciaGastoId())
@@ -119,6 +121,7 @@ public class TestDataFactory {
         return new GastoUnico.Builder()
                 .descripcion("Reparación auto")
                 .monto(amount)
+                .monedaOrigen("ARS") // Default currency
                 .fecha(LocalDate.now())
                 .categoriaGastoId(5L)
                 .importanciaGastoId(1L)
@@ -130,6 +133,7 @@ public class TestDataFactory {
         return new GastoUnico.Builder()
                 .descripcion(faker.commerce().productName())
                 .monto(BigDecimal.valueOf(faker.number().randomDouble(2, 100, 1500)))
+                .monedaOrigen("ARS") // Default currency
                 .fecha(LocalDate.now().minusDays(faker.number().numberBetween(0, 15)))
                 .categoriaGastoId(categoriaGastoId)
                 .importanciaGastoId(getRandomImportanciaGastoId())
@@ -515,6 +519,147 @@ public class TestDataFactory {
         }
 
         return (10 - (sum % 10)) % 10;
+    }
+
+    // ====== TIPO CAMBIO (EXCHANGE RATE) TEST DATA GENERATORS ======
+
+    /**
+     * Create a valid TipoCambio for today with realistic USD/ARS values
+     */
+    public static TipoCambio createValidTipoCambio() {
+        BigDecimal valorVenta = BigDecimal.valueOf(faker.number().randomDouble(2, 900, 1100));
+        BigDecimal valorCompra = valorVenta.subtract(BigDecimal.valueOf(10)); // Spread de 10 pesos
+
+        return new TipoCambio.Builder()
+                .fecha(LocalDate.now())
+                .valorCompra(valorCompra)
+                .valorVenta(valorVenta)
+                .fuente("manual")
+                .build();
+    }
+
+    /**
+     * Create TipoCambio for a specific date
+     */
+    public static TipoCambio createTipoCambioForDate(LocalDate fecha) {
+        BigDecimal valorVenta = BigDecimal.valueOf(faker.number().randomDouble(2, 900, 1100));
+        BigDecimal valorCompra = valorVenta.subtract(BigDecimal.valueOf(10));
+
+        return new TipoCambio.Builder()
+                .fecha(fecha)
+                .valorCompra(valorCompra)
+                .valorVenta(valorVenta)
+                .fuente("manual")
+                .build();
+    }
+
+    /**
+     * Create TipoCambio with specific values (for deterministic tests)
+     */
+    public static TipoCambio createTipoCambioWithSpecificValues(LocalDate fecha, BigDecimal valorCompra, BigDecimal valorVenta) {
+        return new TipoCambio.Builder()
+                .fecha(fecha)
+                .valorCompra(valorCompra)
+                .valorVenta(valorVenta)
+                .fuente("manual")
+                .build();
+    }
+
+    /**
+     * Create TipoCambio with specific source
+     */
+    public static TipoCambio createTipoCambioFromSource(String fuente) {
+        BigDecimal valorVenta = BigDecimal.valueOf(faker.number().randomDouble(2, 900, 1100));
+        BigDecimal valorCompra = valorVenta.subtract(BigDecimal.valueOf(10));
+
+        return new TipoCambio.Builder()
+                .fecha(LocalDate.now())
+                .valorCompra(valorCompra)
+                .valorVenta(valorVenta)
+                .fuente(fuente)
+                .build();
+    }
+
+    /**
+     * Create a historical TipoCambio (from past days)
+     */
+    public static TipoCambio createHistoricalTipoCambio(int daysAgo) {
+        LocalDate fecha = LocalDate.now().minusDays(daysAgo);
+        BigDecimal valorVenta = BigDecimal.valueOf(faker.number().randomDouble(2, 800, 1000));
+        BigDecimal valorCompra = valorVenta.subtract(BigDecimal.valueOf(10));
+
+        return new TipoCambio.Builder()
+                .fecha(fecha)
+                .valorCompra(valorCompra)
+                .valorVenta(valorVenta)
+                .fuente("manual")
+                .build();
+    }
+
+    // ====== MULTI-CURRENCY HELPER METHODS ======
+
+    /**
+     * Create GastoUnico with USD currency (for multi-currency tests)
+     */
+    public static GastoUnico createGastoUnicoInUSD() {
+        return new GastoUnico.Builder()
+                .descripcion("Netflix Subscription")
+                .monto(BigDecimal.valueOf(15.99))
+                .monedaOrigen("USD")
+                .fecha(LocalDate.now())
+                .categoriaGastoId(5L) // Entertainment
+                .importanciaGastoId(2L)
+                .tipoPagoId(3L)
+                .build();
+    }
+
+    /**
+     * Create GastoUnico with ARS currency (explicit, for multi-currency tests)
+     */
+    public static GastoUnico createGastoUnicoInARS() {
+        return new GastoUnico.Builder()
+                .descripcion("Supermercado")
+                .monto(BigDecimal.valueOf(15000))
+                .monedaOrigen("ARS")
+                .fecha(LocalDate.now())
+                .categoriaGastoId(1L)
+                .importanciaGastoId(1L)
+                .tipoPagoId(1L)
+                .build();
+    }
+
+    /**
+     * Create Compra with USD currency (for multi-currency tests)
+     */
+    public static Compra createCompraInUSD() {
+        return new Compra.Builder()
+                .descripcion("iPhone 15")
+                .montoTotal(BigDecimal.valueOf(999.00))
+                .cantidadCuotas(12)
+                .fechaCompra(LocalDate.now())
+                .categoriaGastoId(5L)
+                .importanciaGastoId(2L)
+                .tipoPagoId(3L)
+                .tarjetaId(2L)
+                .monedaOrigen("USD")
+                .build();
+    }
+
+    /**
+     * Create Compra with ARS currency (for multi-currency tests)
+     */
+    public static Compra createCompraInARS() {
+        return new Compra.Builder()
+                .descripcion("Heladera")
+                .montoTotal(BigDecimal.valueOf(500000))
+                .cantidadCuotas(6)
+                .fechaCompra(LocalDate.now())
+                .categoriaGastoId(3L)
+                .importanciaGastoId(1L)
+                .tipoPagoId(3L)
+                .tarjetaId(2L)
+                .monedaOrigen("ARS")
+                .build();
     }
 
 }

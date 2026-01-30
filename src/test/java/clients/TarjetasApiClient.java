@@ -196,4 +196,33 @@ public class TarjetasApiClient extends ApiClient {
         AllureLogger.attachResponse(response);
         return response;
     }
+
+    /**
+     * GET /api/tarjetas/stats - Get card statistics for the authenticated user
+     */
+    public Response getTarjetasStats() {
+        AllureLogger.logStep("Getting tarjetas statistics");
+
+        Response response = given(requestSpec)
+                .when()
+                .get(TARJETAS_ENDPOINT + "/stats");
+
+        AllureLogger.attachResponse(response);
+        return response;
+    }
+
+    /**
+     * GET /api/tarjetas/:id/usage - Check if a card is in use (has associated gastos/compras)
+     */
+    public Response getTarjetaUsage(String id) {
+        AllureLogger.logStep("Checking usage for tarjeta ID: " + id);
+
+        Response response = given(requestSpec)
+                .pathParam("id", id)
+                .when()
+                .get(TARJETAS_ENDPOINT + "/{id}/usage");
+
+        AllureLogger.attachResponse(response);
+        return response;
+    }
 }

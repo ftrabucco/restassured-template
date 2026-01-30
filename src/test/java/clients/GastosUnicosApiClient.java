@@ -37,6 +37,11 @@ public class GastosUnicosApiClient extends ApiClient {
         return post(baseEndpoint, gastoUnico);
     }
 
+    @Step("Create new gasto único with Map payload (for multi-currency tests)")
+    public Response createGastoUnicoWithMap(java.util.Map<String, Object> gastoData) {
+        return post(baseEndpoint, gastoData);
+    }
+
     @Step("Update gasto único with ID: {gastoUnicoId}")
     public Response updateGastoUnico(String gastoUnicoId, GastoUnico gastoUnico) {
         String endpoint = baseEndpoint + "/" + gastoUnicoId;

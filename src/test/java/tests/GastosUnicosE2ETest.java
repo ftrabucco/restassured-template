@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Feature("Gastos Únicos E2E")
 @DisplayName("Gastos Únicos End-to-End Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled("Requires MCP server running - enable manually when needed")
 public class GastosUnicosE2ETest extends ApiTestWithCleanup {
 
     private GastosUnicosApiClient gastosUnicosClient;

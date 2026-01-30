@@ -32,8 +32,9 @@ public class AuthApiClient extends ApiClient {
         registerPayload.put("email", user.getEmail());
         registerPayload.put("password", user.getPassword());
 
-        return requestSpec
+        return io.restassured.RestAssured.given(requestSpec)
                 .body(registerPayload)
+                .when()
                 .post("/api/auth/register");
     }
 
@@ -46,8 +47,9 @@ public class AuthApiClient extends ApiClient {
         loginPayload.put("email", email);
         loginPayload.put("password", password);
 
-        return requestSpec
+        return io.restassured.RestAssured.given(requestSpec)
                 .body(loginPayload)
+                .when()
                 .post("/api/auth/login");
     }
 
@@ -64,8 +66,9 @@ public class AuthApiClient extends ApiClient {
      * GET /api/auth/profile
      */
     public Response getUserProfile(String jwtToken) {
-        return requestSpec
+        return io.restassured.RestAssured.given(requestSpec)
                 .header("Authorization", "Bearer " + jwtToken)
+                .when()
                 .get("/api/auth/profile");
     }
 
@@ -82,9 +85,10 @@ public class AuthApiClient extends ApiClient {
             updatePayload.put("email", email);
         }
 
-        return requestSpec
+        return io.restassured.RestAssured.given(requestSpec)
                 .header("Authorization", "Bearer " + jwtToken)
                 .body(updatePayload)
+                .when()
                 .put("/api/auth/profile");
     }
 
@@ -105,9 +109,10 @@ public class AuthApiClient extends ApiClient {
         changePasswordPayload.put("currentPassword", currentPassword);
         changePasswordPayload.put("newPassword", newPassword);
 
-        return requestSpec
+        return io.restassured.RestAssured.given(requestSpec)
                 .header("Authorization", "Bearer " + jwtToken)
                 .body(changePasswordPayload)
+                .when()
                 .post("/api/auth/change-password");
     }
 
@@ -116,8 +121,9 @@ public class AuthApiClient extends ApiClient {
      * POST /api/auth/logout
      */
     public Response logoutUser(String jwtToken) {
-        return requestSpec
+        return io.restassured.RestAssured.given(requestSpec)
                 .header("Authorization", "Bearer " + jwtToken)
+                .when()
                 .post("/api/auth/logout");
     }
 
